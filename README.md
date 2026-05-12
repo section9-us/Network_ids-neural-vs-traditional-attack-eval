@@ -1,4 +1,4 @@
-# Not All Attacks Are Missed Equally
+# AttackLens AI IDS
 
 Attack-Type-Specific Evaluation of Neural and Traditional Models for
 Flow-Level Intrusion Detection.
