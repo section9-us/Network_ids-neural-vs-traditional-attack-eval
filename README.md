@@ -1,5 +1,4 @@
-# Attack-Type-Specific Evaluation of Neural and Traditional Models for
-# Flow-Level Intrusion Detection
+# Attack-Type-Specific Evaluation of Neural and Traditional Models for Flow-Level Intrusion Detection
 
 Runnable evaluation code for comparing neural and traditional IDS models by
 attack type on flow-level intrusion detection data.
