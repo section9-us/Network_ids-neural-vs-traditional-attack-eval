@@ -1,4 +1,9 @@
-# Flow-level Network Intrusion Detection Comparison
+# Not All Attacks Are Missed Equally
+
+Attack-Type-Specific Evaluation of Neural and Traditional Models for
+Flow-Level Intrusion Detection.
+
+Repository/local project name: `attack-type-specific-flow-ids`
 
 This is a runnable sample project for comparing traditional machine learning
 models and a lightweight PyTorch MLP on flow-level network intrusion detection.
