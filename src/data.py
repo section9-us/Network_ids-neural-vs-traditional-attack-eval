@@ -10,6 +10,7 @@ from sklearn.preprocessing import StandardScaler
 
 
 DEFAULT_LABEL_CANDIDATES = ("Label", "label", "Attack", "attack", "class", "Class")
+DEFAULT_BENIGN_NAMES = {"benign", "normal", "0", "false"}
 
 
 @dataclass
@@ -29,7 +30,14 @@ class PreparedData:
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
-    df.columns = [str(col).strip() for col in df.columns]
+    seen: dict[str, int] = {}
+    columns = []
+    for col in df.columns:
+        normalized = str(col).strip()
+        count = seen.get(normalized, 0)
+        seen[normalized] = count + 1
+        columns.append(normalized if count == 0 else f"{normalized}.{count}")
+    df.columns = columns
     return df
 
 
@@ -47,9 +55,9 @@ def find_label_column(df: pd.DataFrame, label_column: str | None = None) -> str:
     )
 
 
-def to_binary_label(labels: pd.Series) -> np.ndarray:
+def to_binary_label(labels: pd.Series, benign_names: set[str] | None = None) -> np.ndarray:
     normalized = labels.astype(str).str.strip().str.lower()
-    benign_names = {"benign", "normal", "0", "false"}
+    benign_names = benign_names or DEFAULT_BENIGN_NAMES
     return (~normalized.isin(benign_names)).astype(int).to_numpy()
 
 
@@ -60,6 +68,11 @@ def clean_features(df: pd.DataFrame, label_column: str) -> tuple[pd.DataFrame, p
     numeric = features.apply(pd.to_numeric, errors="coerce")
     numeric = numeric.replace([np.inf, -np.inf], np.nan)
 
+    repeated_header_rows = labels.str.lower() == str(label_column).strip().lower()
+    if repeated_header_rows.any():
+        labels = labels.loc[~repeated_header_rows]
+        numeric = numeric.loc[~repeated_header_rows]
+
     # Drop columns that are entirely missing after conversion.
     numeric = numeric.dropna(axis=1, how="all")
     numeric = numeric.fillna(numeric.median(numeric_only=True))
@@ -68,11 +81,49 @@ def clean_features(df: pd.DataFrame, label_column: str) -> tuple[pd.DataFrame, p
     return numeric, labels
 
 
+def align_features_for_inference(
+    df: pd.DataFrame,
+    feature_names: list[str],
+    label_column: str | None = None,
+) -> tuple[pd.DataFrame, pd.Series | None]:
+    df = normalize_columns(df)
+    labels = None
+    if label_column is None:
+        try:
+            label_column = find_label_column(df)
+        except ValueError:
+            label_column = None
+
+    if label_column and label_column in df.columns:
+        labels = df[label_column].astype(str).str.strip()
+        df = df.drop(columns=[label_column])
+
+    numeric = df.apply(pd.to_numeric, errors="coerce")
+    numeric = numeric.replace([np.inf, -np.inf], np.nan)
+    numeric = numeric.reindex(columns=feature_names)
+    numeric = numeric.fillna(numeric.median(numeric_only=True))
+    numeric = numeric.fillna(0.0)
+    return numeric, labels
+
+
 def load_flow_csv(path: Path, label_column: str | None = None) -> tuple[pd.DataFrame, pd.Series]:
     df = pd.read_csv(path)
     df = normalize_columns(df)
     label_col = find_label_column(df, label_column)
     return clean_features(df, label_col)
+
+
+def dataset_profile(features: pd.DataFrame, attack_labels: pd.Series) -> pd.DataFrame:
+    y = to_binary_label(attack_labels)
+    rows = [
+        {"metric": "rows", "value": int(len(features))},
+        {"metric": "features", "value": int(features.shape[1])},
+        {"metric": "benign_rows", "value": int((y == 0).sum())},
+        {"metric": "attack_rows", "value": int((y == 1).sum())},
+    ]
+    for attack_label, count in attack_labels.astype(str).value_counts().sort_index().items():
+        rows.append({"metric": f"label::{attack_label}", "value": int(count)})
+    return pd.DataFrame(rows)
 
 
 def sample_by_attack_type(
@@ -109,12 +160,13 @@ def prepare_data(
     attack_labels: pd.Series,
     max_rows: int | None = None,
     random_state: int = 42,
+    benign_names: set[str] | None = None,
 ) -> PreparedData:
     features, attack_labels = sample_by_attack_type(
         features, attack_labels, max_rows=max_rows, random_state=random_state
     )
 
-    y = to_binary_label(attack_labels)
+    y = to_binary_label(attack_labels, benign_names=benign_names)
     stratify = y if len(np.unique(y)) == 2 else None
 
     x_train_val, x_test, y_train_val, y_test, attack_train_val, attack_test = train_test_split(

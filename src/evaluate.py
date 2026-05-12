@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
@@ -94,6 +97,50 @@ def save_attack_type_plot(attack_results: pd.DataFrame, output_dir: Path) -> Non
     plt.tight_layout()
     plt.savefig(output_dir / "attack_type_detection.png", dpi=160)
     plt.close()
+
+
+def save_false_negative_plot(metrics: pd.DataFrame, output_dir: Path) -> None:
+    if metrics.empty:
+        return
+    output_dir.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(8, 4))
+    sns.barplot(data=metrics, x="model", y="false_negative_rate")
+    plt.ylim(0, 1.05)
+    plt.ylabel("False negative rate")
+    plt.xlabel("Model")
+    plt.title("False Negative Rate by Model")
+    plt.xticks(rotation=15, ha="right")
+    plt.tight_layout()
+    plt.savefig(output_dir / "false_negative_rate.png", dpi=160)
+    plt.close()
+
+
+def save_model_comparison_findings(attack_results: pd.DataFrame, output_dir: Path) -> None:
+    if attack_results.empty:
+        return
+
+    lines = ["# Model Comparison Findings", ""]
+    for attack_label, group in attack_results.groupby("attack_label"):
+        ordered = group.sort_values(
+            ["detection_rate_recall", "missed_false_negative"],
+            ascending=[False, True],
+        )
+        best = ordered.iloc[0]
+        worst = ordered.iloc[-1]
+        lines.append(f"## {attack_label}")
+        lines.append("")
+        lines.append(
+            f"- Best detection: {best['model']} "
+            f"({best['detection_rate_recall']:.3f} recall, {int(best['total'])} test attacks)."
+        )
+        lines.append(
+            f"- Most missed: {worst['model']} "
+            f"({int(worst['missed_false_negative'])} false negatives)."
+        )
+        lines.append("")
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / "model_comparison_findings.md").write_text("\n".join(lines), encoding="utf-8")
 
 
 def print_report(model_name: str, y_true, y_pred) -> None:

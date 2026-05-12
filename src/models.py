@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import torch
 from torch import nn
@@ -31,12 +33,14 @@ def train_mlp(
     epochs: int = 25,
     batch_size: int = 128,
     learning_rate: float = 1e-3,
+    hidden_dim: int = 64,
+    dropout: float = 0.2,
     random_state: int = 42,
 ) -> FlowMLP:
     torch.manual_seed(random_state)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = FlowMLP(input_dim=x_train.shape[1]).to(device)
+    model = FlowMLP(input_dim=x_train.shape[1], hidden_dim=hidden_dim, dropout=dropout).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     positives = max(float(y_train.sum()), 1.0)
@@ -87,9 +91,47 @@ def evaluate_loss(model: FlowMLP, x_val, y_val, loss_fn, device) -> float:
 
 
 def predict_mlp(model: FlowMLP, x: np.ndarray, threshold: float = 0.5) -> np.ndarray:
+    probabilities = predict_mlp_proba(model, x)
+    return (probabilities >= threshold).astype(int)
+
+
+def predict_mlp_proba(model: FlowMLP, x: np.ndarray) -> np.ndarray:
     device = next(model.parameters()).device
     model.eval()
     with torch.no_grad():
         tensor_x = torch.tensor(x, dtype=torch.float32, device=device)
         probabilities = torch.sigmoid(model(tensor_x)).cpu().numpy()
-    return (probabilities >= threshold).astype(int)
+    return probabilities
+
+
+def save_mlp_checkpoint(
+    model: FlowMLP,
+    path: Path,
+    input_dim: int,
+    hidden_dim: int,
+    dropout: float,
+    threshold: float = 0.5,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "state_dict": model.state_dict(),
+            "input_dim": input_dim,
+            "hidden_dim": hidden_dim,
+            "dropout": dropout,
+            "threshold": threshold,
+        },
+        path,
+    )
+
+
+def load_mlp_checkpoint(path: Path) -> tuple[FlowMLP, float]:
+    checkpoint = torch.load(path, map_location="cpu")
+    model = FlowMLP(
+        input_dim=int(checkpoint["input_dim"]),
+        hidden_dim=int(checkpoint.get("hidden_dim", 64)),
+        dropout=float(checkpoint.get("dropout", 0.2)),
+    )
+    model.load_state_dict(checkpoint["state_dict"])
+    model.eval()
+    return model, float(checkpoint.get("threshold", 0.5))

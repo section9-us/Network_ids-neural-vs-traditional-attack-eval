@@ -4,5 +4,7 @@ __pycache__/
 venv/
 data/*.csv
 data/raw/
+data/processed/
 reports/
+artifacts/
 .pytest_cache/
