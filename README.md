@@ -3,7 +3,7 @@
 Attack-Type-Specific Evaluation of Neural and Traditional Models for
 Flow-Level Intrusion Detection.
 
-Repository/local project name: `ai-flow-ids-attack-type-eval`
+Repository/local project name: `attacklens-ai-ids`
 
 This is a runnable sample project for comparing traditional machine learning
 models and a lightweight PyTorch MLP on flow-level network intrusion detection.
