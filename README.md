@@ -16,6 +16,49 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
+## Recreate Data and Model Files
+
+Large data and model files are intentionally not committed to GitHub.
+
+Ignored/generated paths:
+
+- `data/raw/`
+- `data/processed/`
+- `data/*.csv`
+- `artifacts/`
+- `reports/final_run/`
+- other run-specific folders under `reports/`
+
+To reproduce the same local setup on another machine, run the commands below after installing the requirements.
+
+Download the CSE-CIC-IDS2018 processed ML CSV files:
+
+```powershell
+aws s3 sync --no-sign-request --region us-east-1 "s3://cse-cic-ids2018/Processed Traffic Data for ML Algorithms/" data/raw/cse-cic-ids2018/processed/
+```
+
+This downloads about 6.4 GB of CSV files.
+
+Create the sampled training CSV:
+
+```powershell
+python src/prepare_dataset.py --input data/raw/cse-cic-ids2018/processed/*.csv --output data/processed/ids_sample.csv --profile-output reports/final_run/dataset_profile.csv --metadata-output reports/final_run/dataset_metadata.json --max-rows 50000 --min-rows-per-label 100
+```
+
+Train the models and regenerate reports/artifacts:
+
+```powershell
+python src/train.py --csv data/processed/ids_sample.csv --label-column Label --max-rows 50000 --epochs 20 --output-dir reports/final_run --artifact-dir artifacts/final_run
+```
+
+Run the prediction demo:
+
+```powershell
+python src/predict.py --csv data/processed/ids_sample.csv --model pytorch_mlp --artifact-dir artifacts/final_run --output reports/final_run/demo_predictions.csv
+```
+
+The random seed defaults to `42`, so results should be reproducible apart from small differences caused by platform or package versions.
+
 ## Smoke Test With Generated Sample Data
 
 ```powershell
@@ -26,25 +69,7 @@ This creates a small synthetic flow dataset at `data/sample_flows.csv` and write
 
 ## Train on a Real IDS CSV
 
-Place raw or processed public IDS CSV files under `data/raw/` or `data/processed/`. CIC-IDS2017 and CSE-CIC-IDS2018 style flow CSVs are the intended datasets.
-
-Download the CSE-CIC-IDS2018 processed ML CSV files from the public S3 bucket:
-
-```powershell
-aws s3 sync --no-sign-request --region us-east-1 "s3://cse-cic-ids2018/Processed Traffic Data for ML Algorithms/" data/raw/cse-cic-ids2018/processed/
-```
-
-Prepare raw CSV files into a manageable training CSV:
-
-```powershell
-python src/prepare_dataset.py --input data/raw/cse-cic-ids2018/processed/*.csv --output data/processed/ids_sample.csv --profile-output reports/final_run/dataset_profile.csv --metadata-output reports/final_run/dataset_metadata.json --max-rows 50000 --min-rows-per-label 100
-```
-
-Then train on the processed file:
-
-```powershell
-python src/train.py --csv data/processed/ids_sample.csv --label-column Label --max-rows 50000 --epochs 20 --output-dir reports/final_run --artifact-dir artifacts/final_run
-```
+Use the commands in **Recreate Data and Model Files** to download CSE-CIC-IDS2018, create `data/processed/ids_sample.csv`, and train the final models.
 
 If the label column is named `Label`, `label`, `Attack`, `attack`, `class`, or `Class`, `--label-column` can usually be omitted.
 
@@ -53,7 +78,7 @@ If the label column is named `Label`, `label`, `Attack`, `attack`, `class`, or `
 After training, run batch prediction on a CSV:
 
 ```powershell
-python src/predict.py --csv data/sample_flows.csv --model pytorch_mlp --artifact-dir artifacts/sample_run --output reports/sample_run/demo_predictions.csv
+python src/predict.py --csv data/processed/ids_sample.csv --model pytorch_mlp --artifact-dir artifacts/final_run --output reports/final_run/demo_predictions.csv
 ```
 
 Available model names:

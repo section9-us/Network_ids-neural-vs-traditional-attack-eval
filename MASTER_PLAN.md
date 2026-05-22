@@ -58,7 +58,8 @@ This means the next work should focus less on inventing the pipeline and more on
 - Completed: Phase 1 real dataset setup using CSE-CIC-IDS2018 processed ML CSV files from the public S3 bucket. The local raw CSVs live under `data/raw/cse-cic-ids2018/processed/`.
 - Completed: `data/processed/ids_sample.csv` generated with 50,000 sampled rows, 79 numeric flow features, and minimum rare-label preservation.
 - Completed: final training run under `reports/final_run/` and `artifacts/final_run/`.
-- Next step: Phase 8 final findings writeup using `reports/final_run/metrics_summary.csv`, `attack_type_detection.csv`, confusion matrices, and generated plots.
+- Completed: Phase 8 final findings draft written to `reports/final_findings.md` using `reports/final_run/metrics_summary.csv`, `attack_type_detection.csv`, confusion matrices, and generated plots.
+- Next step: review the final findings for course-report tone, then prepare slides or final submission material.
 
 ### Phase 1: Dataset Selection and Local Data Setup
 
@@ -311,6 +312,8 @@ Acceptance criteria:
 
 Goal: turn experiment outputs into final ECS 252 submission material.
 
+Status: Draft completed in `reports/final_findings.md`.
+
 Tasks:
 
 - Write final result narrative:
@@ -334,8 +337,8 @@ Tasks:
 
 Deliverables:
 
-- `reports/final_findings.md`
-- Presentation-ready figures in `reports/`
+- `reports/final_findings.md` completed.
+- Presentation-ready figures in `reports/final_run/` completed.
 
 Acceptance criteria:
 

@@ -6,5 +6,8 @@ data/*.csv
 data/raw/
 data/processed/
 reports/
+!reports/
+reports/*
+!reports/final_findings.md
 artifacts/
 .pytest_cache/
