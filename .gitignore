@@ -11,3 +11,6 @@ reports/*
 !reports/final_findings.md
 artifacts/
 .pytest_cache/
+*.aux
+*.log
+*.out

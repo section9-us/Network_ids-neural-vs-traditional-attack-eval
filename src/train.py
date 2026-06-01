@@ -11,15 +11,30 @@ from sklearn.linear_model import LogisticRegression
 
 from data import dataset_profile, generate_sample_flows, load_flow_csv, prepare_data
 from evaluate import (
+    attack_family_detection,
     attack_type_detection,
     print_report,
+    save_attack_family_plot,
     save_attack_type_plot,
     save_confusion_matrix,
     save_false_negative_plot,
     save_model_comparison_findings,
     summarize_binary_metrics,
 )
-from models import predict_mlp, save_mlp_checkpoint, train_mlp
+from models import predict_mlp, save_mlp_checkpoint, train_neural_model
+
+
+DEFAULT_NEURAL_MODELS = "shallow_mlp,pytorch_mlp,deep_mlp,autoencoder_mlp"
+
+
+def safe_model_name(model_name: str) -> str:
+    return (
+        model_name.lower()
+        .replace(" + ", "_")
+        .replace(" ", "_")
+        .replace("/", "_")
+        .replace("-", "_")
+    )
 
 
 def parse_args() -> argparse.Namespace:
@@ -38,7 +53,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=128, help="PyTorch MLP batch size.")
     parser.add_argument("--learning-rate", type=float, default=1e-3, help="PyTorch MLP learning rate.")
     parser.add_argument("--hidden-dim", type=int, default=64, help="PyTorch MLP hidden dimension.")
+    parser.add_argument("--latent-dim", type=int, default=16, help="Autoencoder latent dimension.")
     parser.add_argument("--dropout", type=float, default=0.2, help="PyTorch MLP dropout.")
+    parser.add_argument(
+        "--neural-models",
+        default=DEFAULT_NEURAL_MODELS,
+        help="Comma-separated neural models: shallow_mlp,pytorch_mlp,deep_mlp,autoencoder_mlp.",
+    )
+    parser.add_argument(
+        "--autoencoder-epochs",
+        type=int,
+        default=10,
+        help="Autoencoder pretraining epochs for autoencoder_mlp.",
+    )
     parser.add_argument("--output-dir", type=Path, default=Path("reports"))
     parser.add_argument("--artifact-dir", type=Path, default=Path("artifacts"))
     parser.add_argument("--random-state", type=int, default=42)
@@ -94,6 +121,7 @@ def main() -> None:
 
     metric_rows = []
     attack_frames = []
+    attack_family_frames = []
     prediction_frame = pd.DataFrame(
         {
             "original_attack_label": data.attack_test.astype(str),
@@ -104,7 +132,7 @@ def main() -> None:
     for model_name, model in models.items():
         print(f"\nTraining {model_name}")
         model.fit(data.x_train, data.y_train)
-        safe_name = model_name.lower().replace(" ", "_")
+        safe_name = safe_model_name(model_name)
         with (args.artifact_dir / f"{safe_name}.pkl").open("wb") as file:
             pickle.dump(model, file)
         y_pred = model.predict(data.x_test)
@@ -114,42 +142,63 @@ def main() -> None:
         attack_frames.append(
             attack_type_detection(model_name, data.attack_test, data.y_test, y_pred)
         )
+        attack_family_frames.append(
+            attack_family_detection(model_name, data.attack_test, data.y_test, y_pred)
+        )
         save_confusion_matrix(model_name, data.y_test, y_pred, args.output_dir)
 
-    print("\nTraining PyTorch MLP")
-    mlp = train_mlp(
-        data.x_train,
-        data.y_train,
-        data.x_val,
-        data.y_val,
-        epochs=args.epochs,
-        batch_size=args.batch_size,
-        learning_rate=args.learning_rate,
-        hidden_dim=args.hidden_dim,
-        dropout=args.dropout,
-        random_state=args.random_state,
-    )
-    save_mlp_checkpoint(
-        mlp,
-        args.artifact_dir / "pytorch_mlp.pt",
-        input_dim=data.x_train.shape[1],
-        hidden_dim=args.hidden_dim,
-        dropout=args.dropout,
-    )
-    mlp_pred = predict_mlp(mlp, data.x_test)
-    prediction_frame["PyTorch MLP_pred"] = mlp_pred
-    print_report("PyTorch MLP", data.y_test, mlp_pred)
-    metric_rows.append(summarize_binary_metrics("PyTorch MLP", data.y_test, mlp_pred))
-    attack_frames.append(attack_type_detection("PyTorch MLP", data.attack_test, data.y_test, mlp_pred))
-    save_confusion_matrix("PyTorch MLP", data.y_test, mlp_pred, args.output_dir)
+    neural_model_keys = [model.strip() for model in args.neural_models.split(",") if model.strip()]
+    neural_metadata = {}
+    for model_key in neural_model_keys:
+        print(f"\nTraining neural model: {model_key}")
+        neural_model, config = train_neural_model(
+            model_key,
+            data.x_train,
+            data.y_train,
+            data.x_val,
+            data.y_val,
+            epochs=args.epochs,
+            autoencoder_epochs=args.autoencoder_epochs,
+            batch_size=args.batch_size,
+            learning_rate=args.learning_rate,
+            hidden_dim=args.hidden_dim,
+            latent_dim=args.latent_dim,
+            dropout=args.dropout,
+            random_state=args.random_state,
+        )
+        model_name = config["display_name"]
+        safe_name = safe_model_name(model_name)
+        save_mlp_checkpoint(
+            neural_model,
+            args.artifact_dir / f"{safe_name}.pt",
+            input_dim=data.x_train.shape[1],
+            config=config,
+        )
+        y_pred = predict_mlp(neural_model, data.x_test)
+        prediction_frame[f"{model_name}_pred"] = y_pred
+        print_report(model_name, data.y_test, y_pred)
+        metric_rows.append(summarize_binary_metrics(model_name, data.y_test, y_pred))
+        attack_frames.append(attack_type_detection(model_name, data.attack_test, data.y_test, y_pred))
+        attack_family_frames.append(attack_family_detection(model_name, data.attack_test, data.y_test, y_pred))
+        save_confusion_matrix(model_name, data.y_test, y_pred, args.output_dir)
+        neural_metadata[model_key] = {
+            **config,
+            "epochs": args.epochs,
+            "batch_size": args.batch_size,
+            "learning_rate": args.learning_rate,
+            "threshold": 0.5,
+        }
 
     metrics = pd.DataFrame(metric_rows)
     attack_results = pd.concat(attack_frames, ignore_index=True)
+    attack_family_results = pd.concat(attack_family_frames, ignore_index=True)
 
     metrics.to_csv(args.output_dir / "metrics_summary.csv", index=False)
     attack_results.to_csv(args.output_dir / "attack_type_detection.csv", index=False)
+    attack_family_results.to_csv(args.output_dir / "attack_family_detection.csv", index=False)
     prediction_frame.to_csv(args.output_dir / "test_predictions.csv", index=False)
     save_attack_type_plot(attack_results, args.output_dir)
+    save_attack_family_plot(attack_family_results, args.output_dir)
     save_false_negative_plot(metrics, args.output_dir)
     save_model_comparison_findings(attack_results, args.output_dir)
 
@@ -167,14 +216,7 @@ def main() -> None:
         "models": {
             "logistic_regression": models["Logistic Regression"].get_params(),
             "random_forest": models["Random Forest"].get_params(),
-            "pytorch_mlp": {
-                "epochs": args.epochs,
-                "batch_size": args.batch_size,
-                "learning_rate": args.learning_rate,
-                "hidden_dim": args.hidden_dim,
-                "dropout": args.dropout,
-                "threshold": 0.5,
-            },
+            **neural_metadata,
         },
     }
     (args.output_dir / "run_metadata.json").write_text(
@@ -185,8 +227,10 @@ def main() -> None:
     print("\nSaved reports:")
     print(f"- {args.output_dir / 'metrics_summary.csv'}")
     print(f"- {args.output_dir / 'attack_type_detection.csv'}")
+    print(f"- {args.output_dir / 'attack_family_detection.csv'}")
     print(f"- {args.output_dir / 'test_predictions.csv'}")
     print(f"- {args.output_dir / 'attack_type_detection.png'}")
+    print(f"- {args.output_dir / 'attack_family_detection.png'}")
     print(f"- {args.output_dir / 'false_negative_rate.png'}")
     print(f"- {args.output_dir / 'model_comparison_findings.md'}")
     print(f"\nSaved artifacts under {args.artifact_dir}")

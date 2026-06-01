@@ -1,322 +1,392 @@
-# Master Plan: Attack-Type-Specific IDS Model Evaluation
+# 마스터 플랜: Attack-Type-Specific IDS Model Evaluation
 
-## 1. Project Goal
+## 1. 프로젝트 목표
 
-Build a reproducible experiment pipeline for comparing traditional machine learning models and a lightweight PyTorch neural network on flow-level network intrusion detection.
+이 프로젝트의 목표는 flow-level network intrusion detection 데이터를 사용해 전통적 머신러닝 모델과 PyTorch 기반 neural model을 재현 가능한 방식으로 비교하는 것이다.
 
-The project should answer the final abstract's research question:
+최종 abstract의 핵심 research question은 다음과 같다.
 
-> Which attack categories are detected better by a lightweight PyTorch-based neural network compared with traditional machine learning baseline models on flow-level network traffic data?
+> Flow-level network traffic data에서 lightweight PyTorch 기반 neural network가 traditional machine learning baseline model보다 어떤 attack category를 더 잘 탐지하는가?
 
-The final result should emphasize security-relevant metrics instead of aggregate accuracy:
+최종 결과는 단순 aggregate accuracy보다 보안적으로 중요한 지표를 중심으로 해석한다.
 
 - Recall
 - False negative rate
 - F1-score
-- Confusion matrices
-- Attack-type-specific detection rates
+- Confusion matrix
+- Attack-type-specific detection rate
 
-## 2. Scope
+## 2. 범위
 
-### In Scope
+### 포함 범위
 
-- Use a public labeled flow-level IDS dataset, preferably CIC-IDS2017 or CSE-CIC-IDS2018.
-- Frame the main task as binary classification: benign vs malicious.
-- Preserve original attack labels for per-attack evaluation.
-- Compare:
+- Public labeled flow-level IDS dataset 사용
+  - 현재 선택: CSE-CIC-IDS2018
+- 주요 task는 binary classification으로 구성
+  - benign vs malicious
+- 원래 attack label은 보존해서 attack-type별 평가에 사용
+- 비교 모델:
   - Logistic Regression
   - Random Forest
+  - Shallow MLP
   - Lightweight PyTorch MLP
-- Generate tables and plots suitable for a final report or presentation.
-- Provide a demo command that predicts benign vs suspicious traffic from a test CSV.
+  - Deep MLP
+  - Autoencoder + MLP
+- final report / presentation에 사용할 수 있는 table과 plot 생성
+- test CSV를 입력받아 benign/suspicious를 예측하는 demo command 제공
 
-### Out of Scope
+### 제외 범위
 
-- Live network packet capture.
-- Real-time prevention or blocking.
-- Production IDS deployment.
-- Claiming that Random Forest represents a commercial IDS implementation.
-- Over-optimizing for leaderboard accuracy.
+- Live network packet capture
+- Real-time prevention 또는 blocking
+- Production IDS deployment
+- Random Forest가 commercial IDS의 정확한 구현이라고 주장하는 것
+- Leaderboard accuracy를 위해 과도하게 튜닝하는 것
 
-## 3. Current Repository Status
+## 3. 현재 repository 상태
 
-The repository already contains a working MVP structure:
+현재 repository에는 작동 가능한 MVP 구조가 있다.
 
-- `src/data.py`: CSV loading, label detection, feature cleaning, scaling, train/validation/test split, sample data generation.
-- `src/models.py`: PyTorch MLP training and prediction.
-- `src/evaluate.py`: binary metrics, confusion matrix plots, attack-type detection summaries.
-- `src/train.py`: end-to-end training script for Logistic Regression, Random Forest, and PyTorch MLP.
-- `requirements.txt`: core dependencies.
+- `src/data.py`
+  - CSV loading
+  - label detection
+  - feature cleaning
+  - scaling
+  - train/validation/test split
+  - sample data generation
+- `src/models.py`
+  - PyTorch MLP training and prediction
+- `src/evaluate.py`
+  - binary metrics
+  - confusion matrix plots
+  - attack-type detection summaries
+- `src/train.py`
+  - Logistic Regression, Random Forest, PyTorch MLP end-to-end training
+- `src/prepare_dataset.py`
+  - raw CSE-CIC-IDS2018 CSV를 sampled training CSV로 변환
+- `src/predict.py`
+  - saved artifact 기반 CSV prediction demo
+- `requirements.txt`
+  - core dependencies
 
-This means the next work should focus less on inventing the pipeline and more on making it robust, reproducible, and report-ready.
+즉, 기본 pipeline은 이미 구현되어 있고, 다음 작업은 논문을 참고한 neural model 확장과 attack family 분석 강화이다.
 
-## 4. Implementation Phases
+## 4. 구현 단계
 
-### Current Status Snapshot
+### 현재 상태 요약
 
-- Completed: Phase 2 preprocessing hardening, Phase 3 baseline training, Phase 4 PyTorch MLP, Phase 5 attack-type evaluation, Phase 6 prediction demo, and most Phase 7 reproducibility work.
-- Completed: Phase 1 real dataset setup using CSE-CIC-IDS2018 processed ML CSV files from the public S3 bucket. The local raw CSVs live under `data/raw/cse-cic-ids2018/processed/`.
-- Completed: `data/processed/ids_sample.csv` generated with 50,000 sampled rows, 79 numeric flow features, and minimum rare-label preservation.
-- Completed: final training run under `reports/final_run/` and `artifacts/final_run/`.
-- Completed: Phase 8 final findings draft written to `reports/final_findings.md` using `reports/final_run/metrics_summary.csv`, `attack_type_detection.csv`, confusion matrices, and generated plots.
-- Next step: review the final findings for course-report tone, then prepare slides or final submission material.
+- 완료: Phase 1 real dataset setup
+  - CSE-CIC-IDS2018 processed ML CSV 사용
+  - public S3 bucket에서 다운로드 가능
+  - local raw CSV 위치: `data/raw/cse-cic-ids2018/processed/`
+- 완료: Phase 2 preprocessing hardening
+- 완료: Phase 3 baseline training
+- 완료: Phase 4 PyTorch MLP
+- 완료: Phase 5 attack-type evaluation
+- 완료: Phase 6 prediction demo
+- 완료: Phase 7 reproducibility / CLI cleanup 대부분
+- 완료: `data/processed/ids_sample.csv` 생성
+  - 50,000 sampled rows
+  - 79 numeric flow features
+  - rare-label preservation 적용
+- 완료: real CSE-CIC-IDS2018 데이터 재다운로드
+  - 확인일: 2026-05-31
+  - raw CSV 10개, 약 6.41GB
+  - 위치: `data/raw/cse-cic-ids2018/processed/`
+- 완료: processed sample 재생성
+  - 위치: `data/processed/ids_sample.csv`
+  - 50,000 sampled rows
+  - 79 numeric flow features
+  - label profile: `reports/final_run/dataset_profile.csv`
+- 완료: 기존 final run
+  - `reports/final_run/`
+  - `artifacts/final_run/`
+- 완료: 기존 final findings draft
+  - `reports/final_findings.md`
+- 구현 완료: Phase 9 코드 확장
+  - Gamage and Samarabandu 논문, "Deep learning methods in network intrusion detection: A survey and an objective comparison" 참고
+  - neural baseline 추가
+  - coarse attack-family analysis 추가
+- 완료: 확장된 Phase 9 final run 재실행
+  - 실행일: 2026-05-31
+  - 모델 6개 비교 완료
+    - Logistic Regression
+    - Random Forest
+    - Shallow MLP
+    - PyTorch MLP
+    - Deep MLP
+    - Autoencoder + MLP
+  - 출력 위치: `reports/final_run/`
+  - artifact 위치: `artifacts/final_run/`
+- 완료: 확장된 모델/attack-family 결과로 final findings 재생성
+  - 위치: `reports/final_findings.md`
+- 다음 단계:
+  - 최종 결과 검토
+  - 필요하면 commit / push
 
-### Phase 1: Dataset Selection and Local Data Setup
+## 5. Phase 1: Dataset Selection and Local Data Setup
 
-Goal: choose one real IDS dataset and make the repo able to consume it consistently.
+목표: 실제 IDS dataset을 선택하고 repository가 일관되게 사용할 수 있게 준비한다.
 
-Tasks:
+작업:
 
-- Pick the primary dataset:
-  - Selected: CSE-CIC-IDS2018 processed ML CSV files from the public S3 bucket `s3://cse-cic-ids2018/`.
-  - Prefix to sync: `Processed Traffic Data for ML Algorithms/`.
-  - Region used for public bucket listing/sync: `us-east-1`.
-  - Local destination: `data/raw/cse-cic-ids2018/processed/`.
-- Create a local data layout:
-  - `data/raw/` for original downloaded CSV files.
-  - `data/processed/` for merged or sampled CSV files.
-  - `reports/` for outputs.
-- Add dataset notes to `README.md`:
-  - Dataset name.
-  - Source URL.
-  - Which CSV files were used.
-  - Label column name.
-  - Any sampling choices.
-- Confirm the label column and attack label values.
-- Run a quick exploratory count:
+- Primary dataset 선택
+  - 선택 완료: CSE-CIC-IDS2018 processed ML CSV files
+  - S3 bucket: `s3://cse-cic-ids2018/`
+  - sync 대상 prefix: `Processed Traffic Data for ML Algorithms/`
+  - region: `us-east-1`
+  - local destination: `data/raw/cse-cic-ids2018/processed/`
+- local data layout 구성
+  - `data/raw/`: 원본 downloaded CSV files
+  - `data/processed/`: merged 또는 sampled CSV files
+  - `reports/`: output reports
+- README에 dataset setup 방법 기록
+  - dataset name
+  - source URL / S3 command
+  - 사용한 CSV files
+  - label column
+  - sampling choices
+- label column과 attack label values 확인
+- dataset profile 생성
   - total rows
   - benign rows
   - malicious rows
   - rows per attack category
-- Use `--min-rows-per-label 100` during dataset preparation so rare attack categories remain analyzable in the sampled dataset when enough source rows exist.
+- rare attack category 보존
+  - `--min-rows-per-label 100` 사용
 
-Deliverables:
+산출물:
 
-- `data/processed/ids_sample.csv` or equivalent local processed dataset.
+- `data/processed/ids_sample.csv`
 - `reports/dataset_profile.csv`
 - `reports/dataset_metadata.json`
 - `src/prepare_dataset.py`
-- README dataset setup instructions.
+- README dataset setup instructions
 
-Acceptance criteria:
+완료 기준:
 
-- A single command can train on the selected CSV. Completed.
-- The sampled dataset contains benign traffic and at least three attack categories. Completed with 14 attack labels in the sampled CSE-CIC-IDS2018 dataset.
+- 단일 command로 selected CSV에 대해 training 가능
+- sampled dataset에 benign traffic과 여러 attack category가 포함됨
+- 현재 CSE-CIC-IDS2018 sample에는 14개 attack label이 보존됨
 
-## 5. Phase 2: Preprocessing Hardening
+## 6. Phase 2: Preprocessing Hardening
 
-Goal: make preprocessing reliable for real CIC-style CSV files.
+목표: 실제 CIC-style CSV에서도 preprocessing이 안정적으로 작동하게 만든다.
 
-Tasks:
+작업:
 
-- Improve column cleanup:
-  - strip whitespace
-  - normalize duplicate column names if needed
-  - drop obvious non-feature identifiers if present
-- Handle invalid feature values:
-  - convert numeric columns safely
-  - replace `inf` and `-inf`
-  - impute missing values
-  - drop all-empty columns
-- Preserve original attack labels before binary conversion.
-- Add configurable benign label names:
+- column cleanup
+  - whitespace 제거
+  - duplicate column name 정규화
+  - 불필요한 non-feature identifier 제거 가능하게 설계
+- invalid feature value 처리
+  - numeric conversion
+  - `inf`, `-inf` 제거
+  - missing value imputation
+  - all-empty column drop
+- binary conversion 전에 original attack label 보존
+- benign label 후보 처리
   - `BENIGN`
   - `Benign`
   - `normal`
   - `0`
-- Ensure stratified splitting works for binary labels.
-- Consider attack-aware sampling so rare attacks are not accidentally removed.
+- binary label 기준 stratified splitting 적용
+- attack-aware sampling으로 rare attack이 사라지지 않게 처리
 
-Deliverables:
+산출물:
 
-- More robust `src/data.py`
-- Optional `reports/preprocessing_summary.csv`
+- 개선된 `src/data.py`
+- 필요 시 `reports/preprocessing_summary.csv`
 
-Acceptance criteria:
+완료 기준:
 
-- Pipeline does not crash on real dataset CSV quirks.
-- Train/validation/test splits preserve both benign and malicious samples.
+- real dataset CSV quirks 때문에 pipeline이 crash하지 않음
+- train/validation/test split에 benign과 malicious sample이 모두 보존됨
 
-## 6. Phase 3: Baseline Model Training
+## 7. Phase 3: Baseline Model Training
 
-Goal: train traditional models that are simple, defensible, and reproducible.
+목표: 단순하고 재현 가능한 traditional ML baseline을 학습한다.
 
-Tasks:
+작업:
 
-- Logistic Regression:
-  - use standardized features
-  - use `class_weight="balanced"`
-  - record convergence settings
-- Random Forest:
-  - use `class_weight="balanced_subsample"`
-  - record number of trees, max depth, and random seed
-- Save trained model artifacts:
+- Logistic Regression
+  - standardized features 사용
+  - `class_weight="balanced"` 사용
+  - convergence setting 기록
+- Random Forest
+  - `class_weight="balanced_subsample"` 사용
+  - number of trees, max depth, random seed 기록
+- trained model artifact 저장
   - `artifacts/logistic_regression.pkl`
   - `artifacts/random_forest.pkl`
   - `artifacts/scaler.pkl`
   - `artifacts/feature_names.json`
-- Save runtime metadata:
+- runtime metadata 저장
   - dataset path
   - row count
   - feature count
   - random seed
   - model hyperparameters
 
-Deliverables:
+산출물:
 
-- Updated `src/train.py`
+- updated `src/train.py`
 - `artifacts/` model outputs
 - `reports/metrics_summary.csv`
 
-Acceptance criteria:
+완료 기준:
 
-- Logistic Regression and Random Forest run end-to-end on the selected dataset.
-- Metrics are reproducible using the same seed.
+- Logistic Regression과 Random Forest가 selected dataset에서 end-to-end로 실행됨
+- 같은 seed에서 metrics가 재현 가능함
 
-## 7. Phase 4: PyTorch MLP Implementation
+## 8. Phase 4: PyTorch MLP Implementation
 
-Goal: implement a lightweight neural IDS model that matches the abstract.
+목표: abstract와 맞는 lightweight neural IDS model을 구현한다.
 
-Tasks:
+작업:
 
-- Keep the MLP intentionally small:
+- 작은 MLP 구조 유지
   - input layer = number of flow features
   - 1-2 hidden layers
   - ReLU activations
   - dropout
   - sigmoid output through logits
-- Use weighted binary cross entropy for imbalance.
-- Track validation loss and keep best checkpoint.
-- Save:
-  - `artifacts/mlp.pt`
+- imbalance 처리를 위해 weighted binary cross entropy 사용
+- validation loss 추적 및 best checkpoint 보존
+- 저장 항목:
+  - `artifacts/pytorch_mlp.pt`
   - model config
-  - threshold used for classification
-- Add optional hyperparameters:
+  - classification threshold
+- optional hyperparameters:
   - epochs
   - batch size
   - learning rate
   - hidden dimension
   - dropout
 
-Deliverables:
+산출물:
 
-- Updated `src/models.py`
-- Saved PyTorch checkpoint
+- updated `src/models.py`
+- saved PyTorch checkpoint
 - PyTorch metrics in `reports/metrics_summary.csv`
 
-Acceptance criteria:
+완료 기준:
 
-- MLP trains without GPU requirement.
-- MLP produces binary predictions and attack probabilities.
+- GPU 없이도 MLP training 가능
+- MLP가 binary prediction과 attack probability를 모두 생성
 
-## 8. Phase 5: Attack-Type-Specific Evaluation
+## 9. Phase 5: Attack-Type-Specific Evaluation
 
-Goal: answer the actual research question, not just report aggregate scores.
+목표: aggregate score만 보지 않고 실제 research question에 답한다.
 
-Tasks:
+작업:
 
-- For each model, compute:
+- model별 binary metrics 계산
   - precision
   - recall
   - F1-score
   - false negative rate
   - confusion matrix
-- For each attack category, compute:
+- attack category별 계산
   - total attack samples
   - detected samples
   - missed false negatives
   - detection rate / recall
-- Add comparative outputs:
+- comparative outputs 추가
   - model-by-attack detection table
-  - attack categories where MLP wins
-  - attack categories where Random Forest wins
-  - attack categories where all models struggle
-- Generate plots:
+  - MLP가 이기는 attack category
+  - Random Forest가 이기는 attack category
+  - 모든 모델이 어려워하는 attack category
+- plot 생성
   - confusion matrix per model
   - grouped bar chart of detection rate by attack type
   - false negative rate comparison
 
-Deliverables:
+산출물:
 
 - `reports/metrics_summary.csv`
 - `reports/attack_type_detection.csv`
 - `reports/attack_type_detection.png`
 - `reports/confusion_matrix_*.png`
-- Optional `reports/model_comparison_findings.md`
+- `reports/model_comparison_findings.md`
 
-Acceptance criteria:
+완료 기준:
 
-- The report can clearly say which attack types each model detects better.
-- False negatives are visible and discussed directly.
+- 어떤 attack type을 어떤 model이 더 잘 탐지하는지 명확히 말할 수 있음
+- false negatives가 직접적으로 드러남
 
-## 9. Phase 6: Demo Prediction Flow
+## 10. Phase 6: Demo Prediction Flow
 
-Goal: satisfy the abstract's demo requirement.
+목표: abstract의 demo requirement를 만족한다.
 
-Tasks:
+작업:
 
-- Add a prediction script, for example `src/predict.py`.
-- Inputs:
-  - path to a test CSV
+- prediction script 추가
+  - `src/predict.py`
+- inputs:
+  - test CSV path
   - model choice
   - saved artifact directory
-- Outputs:
+- outputs:
   - predicted benign/suspicious label
   - attack probability
-  - optional original attack label if present
-- Support batch prediction for a CSV file.
-- Save predictions to:
+  - optional original attack label
+- CSV batch prediction 지원
+- prediction 저장
   - `reports/demo_predictions.csv`
 
-Deliverables:
+산출물:
 
 - `src/predict.py`
 - README demo command
 
-Acceptance criteria:
+완료 기준:
 
-- A user can run one command and see whether sample flows are benign or suspicious.
-- PyTorch model reports attack probability, not only hard labels.
+- command 하나로 sample flows가 benign인지 suspicious인지 확인 가능
+- PyTorch model이 hard label뿐 아니라 attack probability도 출력
 
-## 10. Phase 7: Reproducibility and CLI Cleanup
+## 11. Phase 7: Reproducibility and CLI Cleanup
 
-Goal: make the project easy to rerun before submission.
+목표: 다른 machine에서도 쉽게 재현할 수 있게 만든다.
 
-Tasks:
+작업:
 
-- Standardize CLI commands:
-  - train on sample data
-  - train on real data
-  - predict with saved model
-  - regenerate reports
-- Add a config file if the command arguments become too long:
+- CLI command 표준화
+  - sample data training
+  - real data training
+  - saved model prediction
+  - report regeneration
+- 필요 시 config file 추가
   - `configs/default.yaml`
-- Save run metadata:
+- run metadata 저장
   - `reports/run_metadata.json`
-- Make output filenames stable.
-- Add `--random-state` everywhere randomness is used.
-- Add basic smoke tests or a smoke command using generated sample data.
+- output filename 안정화
+- randomness가 있는 곳에 `--random-state` 적용
+- generated sample data 기반 smoke test command 유지
 
-Deliverables:
+산출물:
 
-- Updated README
-- Optional `configs/default.yaml`
+- updated README
+- optional `configs/default.yaml`
 - `reports/run_metadata.json`
 
-Acceptance criteria:
+완료 기준:
 
-- A fresh clone can run the sample-data pipeline.
-- A real-data run can be reproduced with the same command.
+- fresh clone에서 sample-data pipeline 실행 가능
+- real-data run을 같은 command로 재현 가능
 
-## 11. Phase 8: Final Report and Presentation Assets
+## 12. Phase 8: Final Report and Presentation Assets
 
-Goal: turn experiment outputs into final ECS 252 submission material.
+목표: experiment outputs를 ECS 252 final submission material로 정리한다.
 
-Status: Draft completed in `reports/final_findings.md`.
+상태:
 
-Tasks:
+- 기존 draft 완료: `reports/final_findings.md`
+- Phase 9 확장 후 재생성 필요
 
-- Write final result narrative:
+작업:
+
+- final result narrative 작성
   - research question
   - hypothesis
   - dataset
@@ -325,27 +395,161 @@ Tasks:
   - metrics
   - attack-type findings
   - biggest risk / limitations
-- Include plots:
+- plot 포함
   - overall metric table
   - confusion matrices
   - attack-type detection chart
-- Discuss class imbalance and dataset artifacts.
-- Avoid overclaiming:
-  - say "on this dataset/sample"
-  - distinguish detection component from active prevention
-  - report false negatives prominently
+  - attack-family detection chart, Phase 9 이후
+- class imbalance와 dataset artifacts 논의
+- 과도한 주장 피하기
+  - "on this dataset/sample"라고 명시
+  - active prevention이 아니라 detection component임을 구분
+  - false negatives를 명확히 보고
 
-Deliverables:
+산출물:
 
-- `reports/final_findings.md` completed.
-- Presentation-ready figures in `reports/final_run/` completed.
+- `reports/final_findings.md`
+- presentation-ready figures in `reports/final_run/`
 
-Acceptance criteria:
+완료 기준:
 
-- Final writeup directly answers which attack categories are better detected by which model.
-- Limitations are explicit and aligned with the abstract.
+- final writeup이 어떤 attack category를 어떤 model이 더 잘 탐지하는지 직접 답함
+- limitations가 abstract와 일관되게 명시됨
 
-## 12. Suggested Command Flow
+## 13. Phase 9: Neural Model and Attack Family Expansion
+
+목표: 더 다양한 neural baseline과 coarse attack family 분석을 추가해 프로젝트를 강화한다.
+
+상태:
+
+- 코드 구현 완료
+- sample-data smoke test 완료
+- real-data final run은 데이터 재다운로드 후 다시 실행 필요
+
+근거:
+
+- Gamage and Samarabandu의 survey/benchmark 논문은 IDS에서 여러 deep learning model을 비교한다.
+  - feed-forward neural networks
+  - autoencoders
+  - deep belief networks
+  - LSTMs
+- 이 프로젝트에서는 feed-forward neural family를 확장하고, autoencoder-based representation model을 추가하는 것이 가장 현실적이다.
+- LSTM과 DBN은 우선순위에서 제외한다.
+  - LSTM은 flow row를 sequence로 재구성해야 함
+  - DBN은 구현 복잡도 대비 payoff가 낮음
+
+추가할 neural models:
+
+- `Shallow MLP`
+  - one hidden layer
+  - 목적: 단순 neural baseline
+  - 기대 효과: Logistic Regression 대비 neural nonlinearity의 효과 확인
+- `Current PyTorch MLP`
+  - 기존 two-hidden-layer lightweight model
+  - 목적: 기존 결과와의 연속성 유지
+- `Deep MLP`
+  - three to five hidden layers
+  - 목적: feed-forward depth 증가가 attack recall 또는 F1을 개선하는지 확인
+  - risk: tabular flow features에서는 overfitting 또는 제한적 개선 가능
+- `Autoencoder + MLP`
+  - 구현 완료
+  - autoencoder로 79개 flow feature를 latent representation으로 압축
+  - latent vector를 MLP classifier에 입력
+  - 목적: deep IDS literature에서 자주 쓰이는 representation learning baseline 추가
+  - 해석 포인트: 성능이 supervised MLP보다 낮아도 unsupervised feature compression의 효과를 검증했다는 의미가 있음
+
+구현된 CLI 기본값:
+
+- `--neural-models shallow_mlp,pytorch_mlp,deep_mlp,autoencoder_mlp`
+- Autoencoder pretraining epoch:
+  - `--autoencoder-epochs`
+- Autoencoder latent dimension:
+  - `--latent-dim`
+
+이번 프로젝트에서 제외할 neural models:
+
+- `LSTM`
+  - 이유: 현재 데이터는 각 flow row를 독립 sample로 처리함
+  - LSTM을 쓰려면 time, host, file order 기준 sequence 정의가 필요함
+- `DBN`
+  - 이유: 구현 복잡도가 높고 scoped project에서 실용적 이득이 낮음
+- `CNN`
+  - 이유: tabular flow feature에는 덜 자연스러움
+  - feature를 artificial grid로 reshape해야 해서 설명 부담이 큼
+
+추가할 attack-type analysis:
+
+- Fine-grained labels
+  - 기존 14개 CSE-CIC-IDS2018 attack label 유지
+  - 계속 `attack_type_detection.csv` 생성
+- Coarse attack families
+  - fine-grained labels를 broader family로 mapping
+  - mapping:
+    - `DoS/DDoS`
+      - `DDOS attack-HOIC`
+      - `DDOS attack-LOIC-UDP`
+      - `DDoS attacks-LOIC-HTTP`
+      - `DoS attacks-GoldenEye`
+      - `DoS attacks-Hulk`
+      - `DoS attacks-SlowHTTPTest`
+      - `DoS attacks-Slowloris`
+    - `Brute Force`
+      - `FTP-BruteForce`
+      - `SSH-Bruteforce`
+      - `Brute Force -Web`
+    - `Web Attack`
+      - `Brute Force -XSS`
+      - `SQL Injection`
+    - `Botnet`
+      - `Bot`
+    - `Infiltration`
+      - `Infilteration`
+  - family-level detection rate와 false negative rate 생성
+
+구현 작업:
+
+- `src/models.py` refactor
+  - named neural architectures 지원
+    - `shallow_mlp`
+    - `pytorch_mlp`
+    - `deep_mlp`
+    - `autoencoder_mlp`
+- `src/train.py` update
+  - selected neural models를 같은 run에서 모두 train
+- model별 artifact 저장
+  - `artifacts/final_run/`
+- attack-family mapping helper 추가
+  - 구현 위치: `src/evaluate.py`
+- 생성할 output:
+  - `reports/final_run/attack_family_detection.csv`
+  - `reports/final_run/attack_family_detection.png`
+  - updated `metrics_summary.csv`
+  - updated `model_comparison_findings.md`
+  - updated `reports/final_findings.md`
+
+완료 기준:
+
+- final report가 최소 5개 model을 비교
+  - Logistic Regression
+  - Random Forest
+  - Shallow MLP
+  - Current PyTorch MLP
+  - Deep MLP
+  - Autoencoder + MLP
+- final report가 두 수준의 attack result를 모두 포함
+  - fine-grained 14-label attack-type results
+  - 5-family coarse attack results
+- conclusion에서 neural depth 또는 autoencoder representation learning이 기존 결과를 바꾸는지 설명
+  - 특히 Infilteration이 여전히 가장 어려운 category인지 확인
+
+구현 검증:
+
+```powershell
+python src/train.py --generate-sample --epochs 2 --autoencoder-epochs 2 --max-rows 1200 --output-dir reports/phase9_smoke --artifact-dir artifacts/phase9_smoke
+python src/predict.py --csv data/sample_flows.csv --model deep_mlp --artifact-dir artifacts/phase9_smoke --output reports/phase9_smoke/deep_mlp_demo_predictions.csv
+```
+
+## 14. Suggested Command Flow
 
 Sample-data smoke test:
 
@@ -353,11 +557,11 @@ Sample-data smoke test:
 python src/train.py --generate-sample --epochs 5 --output-dir reports/sample_run --artifact-dir artifacts/sample_run
 ```
 
-Prepare real raw IDS CSV files:
+Real raw IDS CSV 준비:
 
 ```powershell
 aws s3 sync --no-sign-request --region us-east-1 "s3://cse-cic-ids2018/Processed Traffic Data for ML Algorithms/" data/raw/cse-cic-ids2018/processed/
-python src/prepare_dataset.py --input data/raw/cse-cic-ids2018/processed/*.csv --output data/processed/ids_sample.csv --profile-output reports/final_run/dataset_profile.csv --metadata-output reports/final_run/dataset_metadata.json --max-rows 50000
+python src/prepare_dataset.py --input data/raw/cse-cic-ids2018/processed/*.csv --output data/processed/ids_sample.csv --profile-output reports/final_run/dataset_profile.csv --metadata-output reports/final_run/dataset_metadata.json --max-rows 50000 --min-rows-per-label 100
 ```
 
 Real-data experiment:
@@ -366,59 +570,85 @@ Real-data experiment:
 python src/train.py --csv data/processed/ids_sample.csv --label-column Label --max-rows 50000 --epochs 20 --output-dir reports/final_run --artifact-dir artifacts/final_run
 ```
 
-Expected important outputs:
+예상 주요 output:
 
 ```text
 reports/final_run/metrics_summary.csv
 reports/final_run/attack_type_detection.csv
 reports/final_run/attack_type_detection.png
+reports/final_run/attack_family_detection.csv
+reports/final_run/attack_family_detection.png
 reports/final_run/confusion_matrix_logistic_regression.png
 reports/final_run/confusion_matrix_random_forest.png
 reports/final_run/confusion_matrix_pytorch_mlp.png
 ```
 
-## 13. Risk Management
+## 15. Risk Management
 
 ### Risk: Dataset Imbalance
 
-Mitigation:
+대응:
 
-- Use balanced class weights.
-- Report false negative rate.
-- Report per-attack recall.
-- Avoid relying on accuracy.
+- balanced class weights 사용
+- false negative rate 보고
+- per-attack recall 보고
+- accuracy만 사용하지 않음
 
 ### Risk: Rare Attack Categories Have Too Few Samples
 
-Mitigation:
+대응:
 
-- Show support counts per attack type.
-- Avoid strong claims for categories with tiny test counts.
-- Use attack-aware sampling.
+- attack type별 support count 표시
+- tiny test count를 가진 category에 대해 과도한 주장 피하기
+- attack-aware sampling 사용
 
 ### Risk: Dataset Artifacts Inflate Performance
 
-Mitigation:
+대응:
 
-- Discuss this as a limitation.
-- Focus the conclusion on comparative behavior, not production readiness.
-- Use held-out test split only for final reporting.
+- limitation으로 명시
+- production readiness보다 comparative behavior 중심으로 해석
+- final reporting에는 held-out test split만 사용
 
 ### Risk: Full Dataset Is Too Large
 
-Mitigation:
+대응:
 
-- Start with a sampled subset.
-- Make `--max-rows` configurable.
-- Preserve multiple attack categories during sampling.
+- sampled subset으로 시작
+- `--max-rows` configurable 유지
+- 여러 attack category가 보존되도록 sampling
 
-## 14. Final Success Criteria
+### Risk: Expanded Neural Models Increase Scope
 
-The project is complete when it can produce:
+대응:
 
-- A reproducible training run using a real public IDS dataset.
-- Metrics comparing Logistic Regression, Random Forest, and PyTorch MLP.
-- Attack-type-specific detection rates.
-- Confusion matrices and false negative analysis.
-- A demo prediction command for test flows.
-- A final findings document that directly answers the abstract's research question.
+- Shallow MLP와 Deep MLP를 우선 구현
+- Autoencoder + MLP까지 구현했지만, real-data final run에서 시간이 너무 오래 걸리면 `--neural-models`로 제외 가능
+- LSTM, DBN, CNN은 core report가 끝나기 전까지 제외
+- 새로운 experimental design을 만들지 않고 같은 split과 같은 metrics로 비교
+
+## 16. Final Success Criteria
+
+프로젝트 완료 기준:
+
+- real public IDS dataset을 사용한 reproducible training run 가능
+- 다음 model들을 비교하는 metrics 생성
+  - Logistic Regression
+  - Random Forest
+  - Shallow MLP
+  - Current PyTorch MLP
+  - Deep MLP
+  - Autoencoder + MLP
+- fine-grained attack-type-specific detection rates 생성
+- coarse attack-family detection rates 생성
+- confusion matrices와 false negative analysis 생성
+- test flow에 대한 demo prediction command 제공
+- final findings 문서가 abstract의 research question에 직접 답함
+- ACM 형식 최종 논문 초안 작성 완료
+  - `ECS252_Final_Paper.tex`
+  - `ECS252_Final_Paper.pdf`
+  - PDF 6 pages
+- ACM 형식 한글본 작성 완료
+  - `ECS252_Final_Paper_KR.tex`
+  - `ECS252_Final_Paper_KR.pdf`
+  - PDF 6 pages

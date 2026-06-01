@@ -14,7 +14,10 @@ from models import load_mlp_checkpoint, predict_mlp_proba
 MODEL_FILES = {
     "logistic_regression": "logistic_regression.pkl",
     "random_forest": "random_forest.pkl",
+    "shallow_mlp": "shallow_mlp.pt",
     "pytorch_mlp": "pytorch_mlp.pt",
+    "deep_mlp": "deep_mlp.pt",
+    "autoencoder_mlp": "autoencoder_mlp.pt",
 }
 
 
@@ -44,7 +47,7 @@ def main() -> None:
     x = scaler.transform(features).astype("float32")
 
     model_path = args.artifact_dir / MODEL_FILES[args.model]
-    if args.model == "pytorch_mlp":
+    if args.model.endswith("_mlp"):
         model, threshold = load_mlp_checkpoint(model_path)
         probabilities = predict_mlp_proba(model, x)
     else:

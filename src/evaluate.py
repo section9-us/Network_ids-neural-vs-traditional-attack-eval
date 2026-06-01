@@ -16,6 +16,32 @@ from sklearn.metrics import (
 )
 
 
+ATTACK_FAMILY_MAP = {
+    "DDOS attack-HOIC": "DoS/DDoS",
+    "DDOS attack-LOIC-UDP": "DoS/DDoS",
+    "DDoS attacks-LOIC-HTTP": "DoS/DDoS",
+    "DoS attacks-GoldenEye": "DoS/DDoS",
+    "DoS attacks-Hulk": "DoS/DDoS",
+    "DoS attacks-SlowHTTPTest": "DoS/DDoS",
+    "DoS attacks-Slowloris": "DoS/DDoS",
+    "FTP-BruteForce": "Brute Force",
+    "SSH-Bruteforce": "Brute Force",
+    "Brute Force -Web": "Brute Force",
+    "Brute Force -XSS": "Web Attack",
+    "SQL Injection": "Web Attack",
+    "Bot": "Botnet",
+    "Infilteration": "Infiltration",
+    "DDoS": "DoS/DDoS",
+    "Brute Force": "Brute Force",
+    "Botnet": "Botnet",
+    "Web Attack": "Web Attack",
+}
+
+
+def attack_family_for_label(label: str) -> str:
+    return ATTACK_FAMILY_MAP.get(str(label).strip(), "Other Attack")
+
+
 def summarize_binary_metrics(model_name: str, y_true, y_pred) -> dict[str, float | str]:
     precision, recall, f1, _ = precision_recall_fscore_support(
         y_true, y_pred, average="binary", zero_division=0
@@ -66,6 +92,37 @@ def attack_type_detection(model_name: str, attack_labels: pd.Series, y_true, y_p
     return pd.DataFrame(rows).sort_values(["model", "attack_label"])
 
 
+def attack_family_detection(model_name: str, attack_labels: pd.Series, y_true, y_pred) -> pd.DataFrame:
+    rows = []
+    frame = pd.DataFrame(
+        {
+            "attack_label": attack_labels.astype(str).to_numpy(),
+            "attack_family": [attack_family_for_label(label) for label in attack_labels.astype(str)],
+            "y_true": y_true,
+            "y_pred": y_pred,
+        }
+    )
+    attack_frame = frame[frame["y_true"] == 1]
+
+    for attack_family, group in attack_frame.groupby("attack_family"):
+        total = len(group)
+        detected = int((group["y_pred"] == 1).sum())
+        missed = total - detected
+        rows.append(
+            {
+                "model": model_name,
+                "attack_family": attack_family,
+                "total": total,
+                "detected": detected,
+                "missed_false_negative": missed,
+                "detection_rate_recall": detected / total if total else 0.0,
+                "false_negative_rate": missed / total if total else 0.0,
+            }
+        )
+
+    return pd.DataFrame(rows).sort_values(["model", "attack_family"])
+
+
 def save_confusion_matrix(model_name: str, y_true, y_pred, output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
@@ -96,6 +153,27 @@ def save_attack_type_plot(attack_results: pd.DataFrame, output_dir: Path) -> Non
     plt.xticks(rotation=25, ha="right")
     plt.tight_layout()
     plt.savefig(output_dir / "attack_type_detection.png", dpi=160)
+    plt.close()
+
+
+def save_attack_family_plot(attack_family_results: pd.DataFrame, output_dir: Path) -> None:
+    if attack_family_results.empty:
+        return
+    output_dir.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(10, 5))
+    sns.barplot(
+        data=attack_family_results,
+        x="attack_family",
+        y="detection_rate_recall",
+        hue="model",
+    )
+    plt.ylim(0, 1.05)
+    plt.ylabel("Detection rate / recall")
+    plt.xlabel("Attack family")
+    plt.title("Attack-family Detection Rate")
+    plt.xticks(rotation=20, ha="right")
+    plt.tight_layout()
+    plt.savefig(output_dir / "attack_family_detection.png", dpi=160)
     plt.close()
 
 
