@@ -224,6 +224,7 @@ Pipeline은 먼저 CSE-CIC-IDS2018 flow-level data를 정리하고, rare attack 
 중요한 점은 특정 모델의 결과를 개별적으로 손으로 조정한 것이 아니라, 같은 evaluation procedure가 모든 모델에 적용되었다는 것이다.
 또한 학습된 모델을 다시 불러와 새로운 CSV traffic에 prediction을 수행할 수 있도록 prediction step도 포함했다.
 따라서 이 프로젝트는 단순한 result table 작성이 아니라, 동일한 데이터 처리와 평가 절차를 반복할 수 있는 작은 IDS evaluation system으로 구현되었다.
+재현성을 위해 source code와 생성된 experiment output은 \url{https://github.com/section9-us/Network_ids-neural-vs-traditional-attack-eval}에 공개되어 있다.
 
 \section{Results}
 

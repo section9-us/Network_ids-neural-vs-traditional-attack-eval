@@ -201,18 +201,19 @@ In this way, the same formula directly shows whether an attack group is nearly c
 \subsection{Implementation and Reproducibility}
 
 The experiment was executed as a reproducible command-line pipeline rather than as a manually edited notebook.
-This matters because the project compares several models and many attack categories; manual steps would make it easy to accidentally evaluate different models on different splits.
-The repository contains separate scripts for dataset preparation, training, evaluation, and prediction.
-The dataset preparation command reads the raw CSE-CIC-IDS2018 CSV files, applies rare-label-preserving sampling, and writes a processed CSV.
-The training command then reads that processed file, creates the fixed train/validation/test split, trains all models, saves artifacts, and writes result tables and plots.
+This matters because the project compares several models and many attack categories; even small manual steps could change the interpretation of the results.
+For example, if one model were evaluated on a different train/test split, or if one result were produced with a different preprocessing path, the model comparison would no longer be fair.
+Therefore, the implementation is organized so that data preparation, training, and evaluation can be repeated in the same order with the same settings.
 
-The final execution used the CSE-CIC-IDS2018 processed machine-learning CSV files downloaded from the public AWS bucket.
-The raw local dataset contained 10 CSV files totaling about 6.41 GB.
-The processed experiment sample was saved as \texttt{data/processed/ids\_sample.csv}.
-The run produced model artifacts for Logistic Regression, Random Forest, Shallow MLP, PyTorch MLP, Deep MLP, and Autoencoder + MLP.
-It also produced \texttt{metrics\_summary.csv}, \texttt{attack\_type\_detection.csv}, \texttt{attack\_family\_detection.csv}, false-negative plots, and prediction outputs.
-These outputs provide evidence that the project was executed according to the planned method: the same dataset split was used across models, attack labels were preserved for evaluation, and both aggregate and attack-specific results were collected.
-The prediction script can also load a saved model and apply it to a CSV file, which demonstrates the system-building component beyond offline reporting.
+The pipeline first prepares the CSE-CIC-IDS2018 flow-level data and applies sampling while preserving rare attack labels.
+It then uses the same train/validation/test split for all models, so Logistic Regression, Random Forest, the MLP models, and Autoencoder + MLP are compared on the same test traffic.
+The binary benign/malicious label is used as the training target, but the original attack label is preserved through evaluation.
+This design makes it possible to compute overall precision, recall, and F1-score as well as attack-type detection rates and false negatives under the same evaluation procedure.
+
+In the final execution, all six models were trained and evaluated through the same pipeline.
+The results were organized into aggregate metrics, false-negative comparisons, attack-type results, and attack-family results.
+The important point is that the outputs were not manually adjusted model by model; the same evaluation procedure was applied to every model.
+The prediction step can also reload a trained model and apply it to new CSV traffic, so the project is implemented not only as a result table but as a small repeatable IDS evaluation system.
 For reproducibility, the source code and generated experiment outputs are publicly available at \url{https://github.com/section9-us/Network_ids-neural-vs-traditional-attack-eval}.
 
 \section{Results}
