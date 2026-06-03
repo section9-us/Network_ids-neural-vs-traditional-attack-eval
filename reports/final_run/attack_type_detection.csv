@@ -1,0 +1,85 @@
+model,attack_label,total,detected,missed_false_negative,detection_rate_recall
+Logistic Regression,Bot,24,13,11,0.5416666666666666
+Logistic Regression,Brute Force -Web,18,8,10,0.4444444444444444
+Logistic Regression,Brute Force -XSS,20,20,0,1.0
+Logistic Regression,DDOS attack-HOIC,618,618,0,1.0
+Logistic Regression,DDOS attack-LOIC-UDP,15,15,0,1.0
+Logistic Regression,DDoS attacks-LOIC-HTTP,20,19,1,0.95
+Logistic Regression,DoS attacks-GoldenEye,19,19,0,1.0
+Logistic Regression,DoS attacks-Hulk,23,23,0,1.0
+Logistic Regression,DoS attacks-SlowHTTPTest,28,28,0,1.0
+Logistic Regression,DoS attacks-Slowloris,23,23,0,1.0
+Logistic Regression,FTP-BruteForce,18,18,0,1.0
+Logistic Regression,Infilteration,1669,499,1170,0.29898142600359495
+Logistic Regression,SQL Injection,20,15,5,0.75
+Logistic Regression,SSH-Bruteforce,23,23,0,1.0
+Random Forest,Bot,24,23,1,0.9583333333333334
+Random Forest,Brute Force -Web,18,14,4,0.7777777777777778
+Random Forest,Brute Force -XSS,20,20,0,1.0
+Random Forest,DDOS attack-HOIC,618,618,0,1.0
+Random Forest,DDOS attack-LOIC-UDP,15,15,0,1.0
+Random Forest,DDoS attacks-LOIC-HTTP,20,19,1,0.95
+Random Forest,DoS attacks-GoldenEye,19,19,0,1.0
+Random Forest,DoS attacks-Hulk,23,22,1,0.9565217391304348
+Random Forest,DoS attacks-SlowHTTPTest,28,28,0,1.0
+Random Forest,DoS attacks-Slowloris,23,23,0,1.0
+Random Forest,FTP-BruteForce,18,18,0,1.0
+Random Forest,Infilteration,1669,334,1335,0.20011983223487118
+Random Forest,SQL Injection,20,20,0,1.0
+Random Forest,SSH-Bruteforce,23,23,0,1.0
+Shallow MLP,Bot,24,21,3,0.875
+Shallow MLP,Brute Force -Web,18,14,4,0.7777777777777778
+Shallow MLP,Brute Force -XSS,20,20,0,1.0
+Shallow MLP,DDOS attack-HOIC,618,618,0,1.0
+Shallow MLP,DDOS attack-LOIC-UDP,15,15,0,1.0
+Shallow MLP,DDoS attacks-LOIC-HTTP,20,20,0,1.0
+Shallow MLP,DoS attacks-GoldenEye,19,19,0,1.0
+Shallow MLP,DoS attacks-Hulk,23,23,0,1.0
+Shallow MLP,DoS attacks-SlowHTTPTest,28,28,0,1.0
+Shallow MLP,DoS attacks-Slowloris,23,23,0,1.0
+Shallow MLP,FTP-BruteForce,18,18,0,1.0
+Shallow MLP,Infilteration,1669,469,1200,0.2810065907729179
+Shallow MLP,SQL Injection,20,18,2,0.9
+Shallow MLP,SSH-Bruteforce,23,23,0,1.0
+PyTorch MLP,Bot,24,21,3,0.875
+PyTorch MLP,Brute Force -Web,18,14,4,0.7777777777777778
+PyTorch MLP,Brute Force -XSS,20,20,0,1.0
+PyTorch MLP,DDOS attack-HOIC,618,618,0,1.0
+PyTorch MLP,DDOS attack-LOIC-UDP,15,15,0,1.0
+PyTorch MLP,DDoS attacks-LOIC-HTTP,20,20,0,1.0
+PyTorch MLP,DoS attacks-GoldenEye,19,19,0,1.0
+PyTorch MLP,DoS attacks-Hulk,23,23,0,1.0
+PyTorch MLP,DoS attacks-SlowHTTPTest,28,28,0,1.0
+PyTorch MLP,DoS attacks-Slowloris,23,23,0,1.0
+PyTorch MLP,FTP-BruteForce,18,18,0,1.0
+PyTorch MLP,Infilteration,1669,428,1241,0.25644098262432596
+PyTorch MLP,SQL Injection,20,16,4,0.8
+PyTorch MLP,SSH-Bruteforce,23,23,0,1.0
+Deep MLP,Bot,24,10,14,0.4166666666666667
+Deep MLP,Brute Force -Web,18,9,9,0.5
+Deep MLP,Brute Force -XSS,20,9,11,0.45
+Deep MLP,DDOS attack-HOIC,618,618,0,1.0
+Deep MLP,DDOS attack-LOIC-UDP,15,15,0,1.0
+Deep MLP,DDoS attacks-LOIC-HTTP,20,20,0,1.0
+Deep MLP,DoS attacks-GoldenEye,19,18,1,0.9473684210526315
+Deep MLP,DoS attacks-Hulk,23,23,0,1.0
+Deep MLP,DoS attacks-SlowHTTPTest,28,28,0,1.0
+Deep MLP,DoS attacks-Slowloris,23,23,0,1.0
+Deep MLP,FTP-BruteForce,18,18,0,1.0
+Deep MLP,Infilteration,1669,359,1310,0.21509886159376873
+Deep MLP,SQL Injection,20,11,9,0.55
+Deep MLP,SSH-Bruteforce,23,23,0,1.0
+Autoencoder + MLP,Bot,24,10,14,0.4166666666666667
+Autoencoder + MLP,Brute Force -Web,18,10,8,0.5555555555555556
+Autoencoder + MLP,Brute Force -XSS,20,9,11,0.45
+Autoencoder + MLP,DDOS attack-HOIC,618,618,0,1.0
+Autoencoder + MLP,DDOS attack-LOIC-UDP,15,15,0,1.0
+Autoencoder + MLP,DDoS attacks-LOIC-HTTP,20,20,0,1.0
+Autoencoder + MLP,DoS attacks-GoldenEye,19,19,0,1.0
+Autoencoder + MLP,DoS attacks-Hulk,23,23,0,1.0
+Autoencoder + MLP,DoS attacks-SlowHTTPTest,28,28,0,1.0
+Autoencoder + MLP,DoS attacks-Slowloris,23,22,1,0.9565217391304348
+Autoencoder + MLP,FTP-BruteForce,18,18,0,1.0
+Autoencoder + MLP,Infilteration,1669,367,1302,0.21989215098861595
+Autoencoder + MLP,SQL Injection,20,13,7,0.65
+Autoencoder + MLP,SSH-Bruteforce,23,23,0,1.0

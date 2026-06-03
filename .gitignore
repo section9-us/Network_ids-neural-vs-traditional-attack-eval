@@ -8,12 +8,8 @@ data/processed/
 reports/
 !reports/
 reports/*
-!reports/final_findings.md
 !reports/final_run/
-reports/final_run/*
-!reports/final_run/attack_family_detection.pdf
-!reports/final_run/attack_type_detection.pdf
-!reports/final_run/false_negative_rate.pdf
+!reports/final_run/**
 artifacts/
 .pytest_cache/
 *.aux

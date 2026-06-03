@@ -1,0 +1,105 @@
+{
+  "dataset_path": "data\\processed\\ids_sample.csv",
+  "label_column": "Label",
+  "max_rows": 50000,
+  "random_state": 42,
+  "rows": {
+    "train": 32000,
+    "validation": 8000,
+    "test": 10000
+  },
+  "feature_count": 79,
+  "models": {
+    "logistic_regression": {
+      "C": 1.0,
+      "class_weight": "balanced",
+      "dual": false,
+      "fit_intercept": true,
+      "intercept_scaling": 1,
+      "l1_ratio": 0.0,
+      "max_iter": 1000,
+      "n_jobs": null,
+      "penalty": "deprecated",
+      "random_state": 42,
+      "solver": "lbfgs",
+      "tol": 0.0001,
+      "verbose": 0,
+      "warm_start": false
+    },
+    "random_forest": {
+      "bootstrap": true,
+      "ccp_alpha": 0.0,
+      "class_weight": "balanced_subsample",
+      "criterion": "gini",
+      "max_depth": null,
+      "max_features": "sqrt",
+      "max_leaf_nodes": null,
+      "max_samples": null,
+      "min_impurity_decrease": 0.0,
+      "min_samples_leaf": 1,
+      "min_samples_split": 2,
+      "min_weight_fraction_leaf": 0.0,
+      "monotonic_cst": null,
+      "n_estimators": 150,
+      "n_jobs": -1,
+      "oob_score": false,
+      "random_state": 42,
+      "verbose": 0,
+      "warm_start": false
+    },
+    "shallow_mlp": {
+      "model_type": "mlp",
+      "display_name": "Shallow MLP",
+      "hidden_layers": [
+        64
+      ],
+      "dropout": 0.2,
+      "epochs": 20,
+      "batch_size": 128,
+      "learning_rate": 0.001,
+      "threshold": 0.5
+    },
+    "pytorch_mlp": {
+      "model_type": "mlp",
+      "display_name": "PyTorch MLP",
+      "hidden_layers": [
+        64,
+        32
+      ],
+      "dropout": 0.2,
+      "epochs": 20,
+      "batch_size": 128,
+      "learning_rate": 0.001,
+      "threshold": 0.5
+    },
+    "deep_mlp": {
+      "model_type": "mlp",
+      "display_name": "Deep MLP",
+      "hidden_layers": [
+        128,
+        64,
+        32,
+        16
+      ],
+      "dropout": 0.2,
+      "epochs": 20,
+      "batch_size": 128,
+      "learning_rate": 0.001,
+      "threshold": 0.5
+    },
+    "autoencoder_mlp": {
+      "model_type": "autoencoder_mlp",
+      "display_name": "Autoencoder + MLP",
+      "latent_dim": 16,
+      "encoder_hidden_dim": 64,
+      "classifier_hidden_layers": [
+        32
+      ],
+      "dropout": 0.2,
+      "epochs": 20,
+      "batch_size": 128,
+      "learning_rate": 0.001,
+      "threshold": 0.5
+    }
+  }
+}

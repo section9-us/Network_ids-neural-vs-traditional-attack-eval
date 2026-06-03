@@ -1,0 +1,20 @@
+metric,value
+rows,50000
+features,79
+benign_rows,37308
+attack_rows,12692
+label::Benign,37308
+label::Bot,101
+label::Brute Force -Web,101
+label::Brute Force -XSS,101
+label::DDOS attack-HOIC,3002
+label::DDOS attack-LOIC-UDP,101
+label::DDoS attacks-LOIC-HTTP,101
+label::DoS attacks-GoldenEye,101
+label::DoS attacks-Hulk,101
+label::DoS attacks-SlowHTTPTest,101
+label::DoS attacks-Slowloris,101
+label::FTP-BruteForce,103
+label::Infilteration,8486
+label::SQL Injection,87
+label::SSH-Bruteforce,105

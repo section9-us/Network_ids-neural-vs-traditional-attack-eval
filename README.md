@@ -1,6 +1,12 @@
-# Attack-Type-Specific Evaluation of Neural and Traditional Models for Flow-Level Intrusion Detection
+# Beyond Aggregate Metrics: Attack-Type-Specific Evaluation of Flow-Level IDS Models
 
-This project compares traditional machine learning models and several PyTorch neural models for flow-level network intrusion detection. The main analysis focuses on recall, false negatives, and attack-type-specific detection rates instead of aggregate accuracy alone.
+This repository contains the source code, experiment pipeline, generated figures, and final report for a flow-level intrusion detection study on CSE-CIC-IDS2018. The project compares traditional machine learning models and neural models, but the main goal is not to find one global winner. Instead, it evaluates how aggregate IDS metrics can hide attack-type-specific false negatives and security blind spots.
+
+The final report is available as `ECS252_Final_Paper.pdf`.
+
+## Research Question
+
+What limitations do aggregate metrics have when evaluating flow-level IDS models, and how can those limitations be complemented with attack-type-specific false-negative analysis?
 
 ## Models
 
@@ -29,7 +35,7 @@ Ignored/generated paths:
 - `data/processed/`
 - `data/*.csv`
 - `artifacts/`
-- `reports/final_run/`
+- generated outputs under `reports/`, except the committed `reports/final_run/` result set
 - other run-specific folders under `reports/`
 
 To reproduce the same local setup on another machine, run the commands below after installing the requirements.
@@ -106,7 +112,6 @@ Training writes:
 - `dataset_metadata.json`: input files, processed output path, sampling settings
 - `test_predictions.csv`: held-out test predictions
 - `run_metadata.json`: dataset path, split sizes, hyperparameters, random seed
-- `model_comparison_findings.md`: best and weakest model by attack type
 - `confusion_matrix_*.png`: confusion matrix per model
 - `attack_type_detection.png`: grouped attack-type recall chart
 - `attack_family_detection.png`: grouped attack-family recall chart
@@ -123,8 +128,14 @@ Artifacts are saved under the selected artifact directory:
 - `deep_mlp.pt`
 - `autoencoder_mlp.pt`
 
-## Research Framing
+## Final Paper Figures
 
-The primary research question is: which attack categories are detected better by a lightweight PyTorch neural network compared with traditional machine learning baselines?
+The final paper uses the PDF versions of these generated figures:
 
-The conclusion should avoid overclaiming. Results should be described as behavior on the selected public dataset or sampled subset, with class imbalance and dataset artifacts treated as explicit limitations.
+- `reports/final_run/false_negative_rate.pdf`
+- `reports/final_run/attack_type_detection.pdf`
+- `reports/final_run/attack_family_detection.pdf`
+
+## Scope and Limitations
+
+Results should be interpreted as behavior on a sampled CSE-CIC-IDS2018 benchmark, not as a production IDS guarantee. The report explicitly discusses dataset dependence, class imbalance, threshold choice, and the binary training objective as limitations.

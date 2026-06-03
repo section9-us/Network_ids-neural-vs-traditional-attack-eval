@@ -1,0 +1,41 @@
+{
+  "input_files": [
+    "C:\\Users\\user\\Desktop\\Network-ids-neural-vs-traditional-attack-eval\\data\\raw\\cse-cic-ids2018\\processed\\Friday-02-03-2018_TrafficForML_CICFlowMeter.csv",
+    "C:\\Users\\user\\Desktop\\Network-ids-neural-vs-traditional-attack-eval\\data\\raw\\cse-cic-ids2018\\processed\\Friday-16-02-2018_TrafficForML_CICFlowMeter.csv",
+    "C:\\Users\\user\\Desktop\\Network-ids-neural-vs-traditional-attack-eval\\data\\raw\\cse-cic-ids2018\\processed\\Friday-23-02-2018_TrafficForML_CICFlowMeter.csv",
+    "C:\\Users\\user\\Desktop\\Network-ids-neural-vs-traditional-attack-eval\\data\\raw\\cse-cic-ids2018\\processed\\Thuesday-20-02-2018_TrafficForML_CICFlowMeter.csv",
+    "C:\\Users\\user\\Desktop\\Network-ids-neural-vs-traditional-attack-eval\\data\\raw\\cse-cic-ids2018\\processed\\Thursday-01-03-2018_TrafficForML_CICFlowMeter.csv",
+    "C:\\Users\\user\\Desktop\\Network-ids-neural-vs-traditional-attack-eval\\data\\raw\\cse-cic-ids2018\\processed\\Thursday-15-02-2018_TrafficForML_CICFlowMeter.csv",
+    "C:\\Users\\user\\Desktop\\Network-ids-neural-vs-traditional-attack-eval\\data\\raw\\cse-cic-ids2018\\processed\\Thursday-22-02-2018_TrafficForML_CICFlowMeter.csv",
+    "C:\\Users\\user\\Desktop\\Network-ids-neural-vs-traditional-attack-eval\\data\\raw\\cse-cic-ids2018\\processed\\Wednesday-14-02-2018_TrafficForML_CICFlowMeter.csv",
+    "C:\\Users\\user\\Desktop\\Network-ids-neural-vs-traditional-attack-eval\\data\\raw\\cse-cic-ids2018\\processed\\Wednesday-21-02-2018_TrafficForML_CICFlowMeter.csv",
+    "C:\\Users\\user\\Desktop\\Network-ids-neural-vs-traditional-attack-eval\\data\\raw\\cse-cic-ids2018\\processed\\Wednesday-28-02-2018_TrafficForML_CICFlowMeter.csv"
+  ],
+  "output": "data\\processed\\ids_sample.csv",
+  "profile_output": "reports\\final_run\\dataset_profile.csv",
+  "rows_before_sampling": 16232943,
+  "rows_after_sampling": 50000,
+  "feature_count": 79,
+  "full_label_counts": {
+    "Bot": 286191,
+    "Benign": 13484708,
+    "DoS attacks-SlowHTTPTest": 139890,
+    "DoS attacks-Hulk": 461912,
+    "Brute Force -Web": 611,
+    "Brute Force -XSS": 230,
+    "SQL Injection": 87,
+    "DDoS attacks-LOIC-HTTP": 576191,
+    "Infilteration": 161934,
+    "DoS attacks-GoldenEye": 41508,
+    "DoS attacks-Slowloris": 10990,
+    "FTP-BruteForce": 193360,
+    "SSH-Bruteforce": 187589,
+    "DDOS attack-HOIC": 686012,
+    "DDOS attack-LOIC-UDP": 1730
+  },
+  "label_column_written": "Label",
+  "max_rows": 50000,
+  "min_rows_per_label": 100,
+  "chunksize": 200000,
+  "random_state": 42
+}
