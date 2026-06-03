@@ -8,7 +8,7 @@
 \usepackage{array}
 \usepackage{graphicx}
 
-\title{Attack-Type-Specific Evaluation of Neural and Traditional Models for Flow-Level Intrusion Detection}
+\title{Beyond Aggregate Metrics: Attack-Type-Specific Evaluation of Flow-Level IDS Models}
 
 \author{Yonghyeon Lee}
 \email{yhylee@ucdavis.edu}
@@ -25,6 +25,7 @@ Using the CSE-CIC-IDS2018 processed flow-feature dataset, I train Logistic Regre
 The results show that aggregate metrics and attack-type-specific false negatives can support different model choices: Deep MLP and Autoencoder + MLP improve precision and F1-score, while Logistic Regression has the highest attack recall and lowest false-negative rate.
 Attack-type analysis further shows that DoS/DDoS and many brute-force attacks are detected well, Random Forest is strongest on Bot and SQL Injection, and Infiltration remains a shared blind spot for every model.
 These findings suggest that attack-type-specific analysis is not only an interpretive add-on, but a practical evaluation step for choosing models, tuning thresholds, and designing more flexible hybrid IDS systems around the attack families each model covers best.
+In other words, aggregate metrics identify models that perform well on average, but attack-type analysis shows whether those models cover the attack families that matter for a given IDS setting.
 IDS evaluation should therefore combine aggregate metrics with attack-type-specific false-negative analysis so future IDS designs can make more diverse, coverage-oriented choices instead of selecting one global winner.
 \end{abstract}
 
@@ -53,6 +54,7 @@ This leads to the research question:
 This question is not a leaderboard-style search for the best IDS model.
 Instead, the neural/traditional comparison is used as an experimental lens for studying whether strong aggregate scores can coexist with weak coverage of operationally important attack types.
 More specifically, the project examines DoS/DDoS, brute force, botnet, infiltration, and web-based attacks to identify where each model succeeds, where it fails, and whether those attack-type results can guide model selection, debugging, or future hybrid IDS design.
+In this framing, attack-type-specific evaluation is not only post-hoc explanation but practical model selection: aggregate metrics show which models perform well on average, while attack-type analysis shows whether those models cover the attack families that matter in a given IDS setting.
 
 I hypothesized that aggregate metrics would not fully reflect the security coverage of each model.
 More specifically, I expected neural models to improve some aggregate scores and some attack categories whose signatures depend on nonlinear combinations of flow-level features, such as botnet or web-based traffic.
@@ -67,34 +69,22 @@ The final result shows that neural models can improve some aggregate metrics, bu
 
 \section{Related Work}
 
-Prior work on intrusion detection datasets motivates the empirical setting of this project.
-CICIDS2017 was introduced to provide a more realistic benchmark than older IDS datasets.
-It includes benign traffic and common attack traffic represented through labeled network-flow features [1].
-CSE-CIC-IDS2018 extends this direction with a larger cyber-defense dataset containing multiple attack scenarios, including brute force, Heartbleed, botnet, DoS, DDoS, web attacks, and infiltration [2].
-These datasets are directly relevant because they support both binary benign/malicious detection and attack-category-specific analysis.
-In this paper, CSE-CIC-IDS2018 is especially useful because the models are trained on a binary IDS task while the original attack labels are preserved for post-hoc analysis.
+This project is motivated by a gap in how IDS model performance is interpreted.
+Gamage and Samarabandu note that IDS model comparisons are difficult because studies use different datasets and evaluation metrics, and their benchmark reports model-level metrics such as accuracy, F1-score, false-positive rate, and false-negative rate [1].
+However, aggregate scores can hide security-relevant failures when datasets are imbalanced or when some attack categories are harder to detect.
+Saito and Rehmsmeier show that precision-recall analysis is especially informative for imbalanced classification problems [2].
+For IDS, this matters because false negatives are malicious flows that pass undetected, so this paper treats recall, false-negative rate, and attack-type detection rate as central security metrics.
 
-Prior work on IDS modeling motivates the model set used in this study.
-Logistic Regression provides a simple linear baseline, while Random Forest is a standard traditional machine learning baseline because it combines many decision-tree predictors into an ensemble [3].
-Deep learning has also been studied for network intrusion detection.
-Gamage and Samarabandu survey deep learning approaches for IDS and compare feed-forward neural networks, autoencoders, deep belief networks, and LSTMs on legacy and modern IDS datasets [4].
-More specifically, Rosay, Carlier, and Leroux propose an MLP-based intrusion detection system for the CICIDS2017 dataset and report that a carefully designed MLP can be competitive with traditional machine learning techniques [5].
-Song, Hyun, and Cheong analyze autoencoders for network intrusion detection and show that autoencoder design choices such as model capacity, latent size, and thresholding can strongly affect IDS performance [6].
-These studies support the inclusion of MLP-based neural models and an autoencoder-based representation-learning model.
-At the same time, prior work also shows that simply adding a neural architecture is not a new contribution by itself.
+CSE-CIC-IDS2018 provides the empirical setting for this study.
+It contains multiple attack scenarios, including brute force, Heartbleed, botnet, DoS, DDoS, web attacks, and infiltration [3].
+The dataset is useful here because it supports binary benign/malicious training while preserving original attack labels for post-hoc attack-category analysis.
 
-The gap this project addresses is in how IDS model performance is interpreted.
-Many IDS studies emphasize overall accuracy or aggregate detection performance [4], but aggregate metrics can hide security-relevant failures when datasets are imbalanced or when some attack categories are harder to detect.
-Saito and Rehmsmeier show that precision-recall analysis is especially informative for imbalanced classification problems [7].
-This matters for IDS because a false negative represents malicious traffic that the system fails to flag.
-For that reason, this paper treats recall, false-negative rate, and attack-type detection rate as central security metrics rather than as secondary diagnostics.
-
-Therefore, this project fits within existing work but asks a narrower and more security-centered question.
-It does not claim that neural models simply perform IDS better than traditional machine learning.
-Instead, it compares Logistic Regression, Random Forest, Shallow MLP, Lightweight PyTorch MLP, Deep MLP, and Autoencoder + MLP models under the same flow-level pipeline to identify which attack categories each model misses.
-The neural and traditional baselines are therefore not used to claim a new best IDS architecture, but to examine whether common model-comparison metrics obscure attack-specific failure modes.
-This framing matches the final experimental goal: neural models may improve precision or F1-score, but the more important security question is whether they reduce missed attacks across DoS/DDoS, brute force, botnet, infiltration, and web attack categories.
-The related work supports the project in three ways: CICIDS datasets provide the labeled flow-level setting, prior ML/DL IDS work justifies the model comparison, and imbalanced-evaluation research motivates using attack-type recall and false-negative analysis to complement aggregate metrics.
+Prior IDS modeling work motivates the model set.
+Logistic Regression is used as a linear baseline, and Random Forest is a standard traditional machine learning baseline because it ensembles many decision-tree predictors [4].
+Deep learning has also been widely studied for IDS: Gamage and Samarabandu compare feed-forward neural networks, autoencoders, deep belief networks, and LSTMs [1], Rosay, Carlier, and Leroux report competitive CICIDS2017 results with an MLP-based IDS [5], and Song, Hyun, and Cheong show that autoencoder capacity, latent size, and thresholding can strongly affect IDS performance [6].
+Together, these studies justify comparing traditional, MLP-based, and autoencoder-based models, but they also show that adding a neural architecture is not enough by itself.
+These studies motivate the model choices, but they mostly report model-level performance; this paper instead asks whether those model-level metrics hide attack-type-specific security gaps.
+Therefore, this paper uses those baselines to ask a narrower question: whether common model-comparison metrics obscure attack-specific false-negative patterns across the threat landscape.
 
 \section{Method}
 
@@ -164,18 +154,49 @@ The aggregate metrics are computed as:
 \end{aligned}
 \end{equation}
 
-Attack-type detection rate is computed by grouping malicious test rows by their original fine-grained attack label and measuring the fraction of rows detected as malicious by each model.
-Attack-family detection rate maps fine-grained labels into five broader groups: Botnet, Brute Force, DoS/DDoS, Infiltration, and Web Attack.
+The difference between recall and attack-type detection rate is the scope of calculation.
+Recall is an aggregate metric computed over all malicious test flows.
+By contrast, attack-type detection rate is group-specific recall computed within a particular attack type or attack family.
+It is therefore not a new metric, but recall disaggregated by the original attack label.
+
+\begin{table}[t]
+  \caption{Difference between overall recall and attack-type detection rate.}
+  \label{tab:recall_definition}
+  \centering
+  \small
+  \begin{tabular}{@{}p{0.22\linewidth}p{0.30\linewidth}p{0.32\linewidth}@{}}
+    \toprule
+    Metric & Scope & Interpretation \\
+    \midrule
+    Overall recall & All malicious test flows & Fraction of all attacks detected by the model \\
+    Attack-type detection rate & Malicious flows in a specific attack type or family & Fraction detected within that attack group \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Attack-type detection rate, or attack-type recall, is computed by grouping malicious test rows by their original fine-grained attack label and measuring the fraction of rows detected as malicious by each model.
+Attack-family detection rate, or attack-family recall, maps fine-grained labels into five broader groups: Botnet, Brute Force, DoS/DDoS, Infiltration, and Web Attack and computes the same quantity.
 These two levels of analysis are both necessary.
 The fine-grained view shows specific failure cases, while the family-level view summarizes broader security patterns.
 Together, these group-level metrics complement aggregate precision, recall, and F1-score by showing which attack categories remain uncovered.
-For an attack type or family \(g\), the group detection rate is:
+For an attack type or family \(g\), the group-specific recall is:
 \begin{equation}
 \mathrm{DetectionRate}(g) =
 \frac{\sum_{i \in G_g} \mathbf{1}[\hat{y}_i = 1]}
 {|G_g|},
 \end{equation}
 where \(G_g\) is the set of malicious test flows whose original label belongs to group \(g\), and \(\hat{y}_i=1\) means the model predicted flow \(i\) as malicious.
+For example, Random Forest detects 23 of the 24 Botnet test flows as malicious.
+Thus, its Botnet detection rate is:
+\[
+\mathrm{DetectionRate}(\mathrm{Botnet}) = 23/24 = 0.958.
+\]
+By contrast, Logistic Regression detects only 499 of the 1,669 Infiltration test flows.
+Thus, its Infiltration detection rate is:
+\[
+\mathrm{DetectionRate}(\mathrm{Infiltration}) = 499/1669 = 0.299.
+\]
+In this way, the same formula directly shows whether an attack group is nearly covered or remains a major blind spot.
 
 \subsection{Implementation and Reproducibility}
 
@@ -197,55 +218,13 @@ The prediction script can also load a saved model and apply it to a CSV file, wh
 
 \subsection{Overall Model Performance}
 
-Table~\ref{tab:overall} reports binary malicious-class performance on the 10,000-row test split.
-This table illustrates the central tension of the study: the aggregate F1-score favors Deep MLP, while the security-focused false-negative metrics favor Logistic Regression.
-Deep MLP achieves the highest F1-score and precision.
-However, Logistic Regression achieves the highest recall and the lowest false-negative rate.
+Binary malicious-class performance on the 10,000-row test split illustrates the central tension of the study: the aggregate F1-score favors Deep MLP, while the security-focused false-negative metrics favor Logistic Regression.
+Deep MLP achieves the highest precision and F1-score (0.747 precision, 0.574 F1), while Logistic Regression achieves the highest recall and lowest false-negative rate (0.528 recall, 0.472 FNR).
 This distinction is central to the security interpretation of the experiment.
 The model that looks best by F1-score is not the model that misses the fewest attacks.
-
-\begin{table}[t]
-  \caption{Overall malicious-class performance on the test split.}
-  \label{tab:overall}
-  \centering
-  \small
-  \begin{tabular}{lrrrr}
-    \toprule
-    Model & Precision & Recall & F1 & FNR \\
-    \midrule
-    Logistic Regression & 0.512 & 0.528 & 0.520 & 0.472 \\
-    Random Forest & 0.649 & 0.471 & 0.546 & 0.529 \\
-    Shallow MLP & 0.578 & 0.524 & 0.550 & 0.476 \\
-    PyTorch MLP & 0.615 & 0.507 & 0.556 & 0.493 \\
-    Deep MLP & 0.747 & 0.467 & 0.574 & 0.533 \\
-    Autoencoder + MLP & 0.723 & 0.471 & 0.570 & 0.529 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\paragraph{Logistic Regression.}
-Logistic Regression has the highest recall (0.528) and the lowest false-negative rate (0.472), missing 1,197 attacks.
-It is the weakest model by precision, but it is the safest model in this experiment if the priority is to minimize missed malicious flows.
-
-\paragraph{Random Forest.}
-Random Forest improves precision to 0.649, but its recall falls to 0.471 and it misses 1,342 attacks.
-This suggests that the tree ensemble is more selective than Logistic Regression at the binary level, even though later attack-type results show that it is strong on Botnet and Web Attack.
-
-\paragraph{Shallow MLP.}
-Shallow MLP is the strongest neural model by recall, with 0.524 recall and 1,209 missed attacks.
-Its behavior is close to Logistic Regression, but with better precision and F1-score, making it the most balanced neural baseline.
-
-\paragraph{Lightweight PyTorch MLP.}
-The two-hidden-layer PyTorch MLP improves precision and F1-score relative to Logistic Regression, but recall drops to 0.507 and false negatives increase to 1,252.
-It therefore offers a moderate precision-recall tradeoff rather than a clear reduction in missed attacks.
-
-\paragraph{Deep MLP.}
-Deep MLP has the highest precision (0.747) and F1-score (0.574), but also the highest false-negative rate (0.533) and 1,354 missed attacks.
-It is the most selective model: when it predicts malicious, it is often correct, but it leaves more attacks undetected.
-
-\paragraph{Autoencoder + MLP.}
-Autoencoder + MLP behaves similarly to Deep MLP, with high precision (0.723), high F1-score (0.570), and a high false-negative rate (0.529).
-The learned representation improves selectivity but does not solve the IDS recall problem.
+Across models, Logistic Regression misses the fewest attacks (1,197), while Shallow MLP is the strongest neural model by recall (0.524 recall, 1,209 missed attacks).
+PyTorch MLP offers a moderate precision-recall tradeoff, but Deep MLP and Autoencoder + MLP are more selective: they improve precision and F1-score while missing more attacks (1,354 and 1,342 false negatives, respectively).
+Thus, the neural models improve some aggregate scores, but they do not consistently improve security coverage.
 
 \begin{figure}[t]
   \centering
@@ -254,6 +233,14 @@ The learned representation improves selectivity but does not solve the IDS recal
   \Description{Zoomed bar chart comparing false-negative rate and false-negative count across the six evaluated models.}
   \label{fig:fnr}
 \end{figure}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{reports/final_run/attack_type_detection.pdf}
+  \caption{Fine-grained attack-type recall by model. Most DoS/DDoS and brute-force labels are nearly solved, while Infiltration remains the shared blind spot across all models.}
+  \Description{Grouped bar chart showing fine-grained attack-type recall for each model, with Infiltration visibly lower than most other attack types.}
+  \label{fig:types}
+\end{figure*}
 
 \subsection{Coarse Attack-Family Results}
 
@@ -288,18 +275,11 @@ The family-level recall is only 0.299.
 Random Forest detects 334, Shallow MLP detects 469, PyTorch MLP detects 428, Deep MLP detects 359, and Autoencoder + MLP detects 367.
 This family drives a large portion of the overall false negatives.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{reports/final_run/attack_family_detection.pdf}
-  \caption{Detection recall by coarse attack family and model.}
-  \Description{Grouped bar chart showing recall by coarse attack family for each model.}
-  \label{fig:family}
-\end{figure}
-
 \subsection{Fine-Grained Attack-Type Results}
 
 The fine-grained results explain which specific attacks create the family-level patterns.
 They also show the concrete failure modes that aggregate model scores compress into a single number.
+Here, attack-type-specific evaluation moves from post-hoc explanation to practical model selection because it shows not only which model performs well overall, but which attack labels each model actually covers.
 Several attack labels are detected almost perfectly by nearly all models.
 DDOS attack-HOIC, DDOS attack-LOIC-UDP, DoS attacks-SlowHTTPTest, FTP-BruteForce, and SSH-Bruteforce all have near-perfect or perfect recall across most models.
 These attacks appear to have flow-feature signatures that are easier to separate from benign traffic.
@@ -369,55 +349,29 @@ Logistic Regression is best at 0.299 recall.
 Shallow MLP reaches 0.281, PyTorch MLP reaches 0.256, Autoencoder + MLP reaches 0.220, Deep MLP reaches 0.215, and Random Forest reaches 0.200.
 This is the clearest security blind spot in the experiment.
 
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=\textwidth]{reports/final_run/attack_type_detection.pdf}
-  \caption{Fine-grained attack-type recall by model.}
-  \Description{Grouped bar chart showing fine-grained attack-type recall for each model.}
-  \label{fig:types}
-\end{figure*}
-
 \section{Discussion}
 
-The main lesson is that model choice changes the false-negative distribution more than it simply improves or worsens IDS performance.
-The results partially support the hypothesis: Shallow MLP and PyTorch MLP match Random Forest on the Brute Force family, and the MLP models perform very well on DoS/DDoS traffic.
-However, neural models do not consistently reduce missed attacks.
-The highest-recall model is Logistic Regression, and the lowest-recall models include the deeper neural variants.
+Taken together, the results shift attack-type-specific evaluation from post-hoc explanation to practical model selection.
+Aggregate metrics identify models that perform well on average, but attack-type analysis shows whether those models cover the attack families that matter for a given IDS setting.
 
-This result matters because metric choice changes the conclusion.
-If the project reported only F1-score, Deep MLP would look like the strongest model.
-If the project reported only precision, Deep MLP would look even better.
-But the security objective of an IDS is not only to make accurate malicious predictions.
-It is also to avoid allowing malicious traffic to pass undetected.
+\paragraph{Metric choice.}
+The main lesson is that metric choice changes the conclusion.
+If the project reported only F1-score or precision, Deep MLP would look like the strongest model.
+However, the security objective of an IDS is not only to make accurate malicious predictions, but also to avoid allowing malicious traffic to pass undetected.
 By that standard, Logistic Regression and Shallow MLP are more attractive than Deep MLP in this experiment.
+The results therefore partially support the hypothesis: neural models match or improve traditional baselines on some attack families, but they do not consistently reduce missed attacks.
 
-The attack-type breakdown also shows why aggregate metrics can be misleading.
-The experiment shows a concrete mechanism by which aggregate metrics can mislead: strong performance on easier high-signal attacks can coexist with weak coverage of stealthier or more ambiguous attacks.
-The fine-grained results separate into three groups.
-First, DoS/DDoS and FTP/SSH brute-force traffic are almost solved by these flow-level models.
-Second, Bot and SQL Injection favor Random Forest, suggesting that some botnet and web-attack behaviors are captured well by threshold-style rules over tabular flow features.
-Third, Infiltration is the unresolved blind spot: it is both frequent and difficult, and every model misses most Infiltration samples.
-Across the six models, Infiltration accounts for 96.8\% to 99.5\% of all false negatives.
-This turns attack-type-specific evaluation into a diagnostic tool.
-Model-specific strengths suggest which traffic patterns a model is biased toward detecting, while shared failures point to dataset, feature, or objective limitations.
-For example, Random Forest's strength on Bot and SQL Injection suggests useful threshold-like feature structure, while the shared Infiltration failure suggests that the available flow features or binary objective are insufficient for that attack family.
+\paragraph{Attack-type blind spots.}
+The attack-type breakdown shows the mechanism behind this mismatch.
+DoS/DDoS and FTP/SSH brute-force traffic are almost solved by these flow-level models, while Bot and SQL Injection favor Random Forest, suggesting useful threshold-like feature structure in tabular flow features.
+Infiltration is the unresolved blind spot: it is both frequent and difficult, every model misses most Infiltration samples, and it accounts for 96.8\% to 99.5\% of all false negatives across models.
+This turns attack-type-specific evaluation into a diagnostic tool: model-specific strengths show which traffic patterns a model detects well, while shared failures point to dataset, feature, or objective limitations.
 
+\paragraph{Operational choice.}
 The operational implication is that choosing the model with the best average score is not enough.
-The neural/traditional comparison is therefore best understood as an experimental lens.
-Because the models differ in precision, recall, and attack-family behavior, they reveal that aggregate IDS metrics can support one model choice while attack-type false negatives support another.
-If only one model had been evaluated, the Infiltration failure could look like a model-specific weakness; by comparing six models, the experiment shows that Infiltration is a shared blind spot while other attack categories depend strongly on model choice.
-If the goal is to reduce false alarms, Deep MLP or Autoencoder + MLP may look attractive because they are more precision-oriented.
-If the goal is to minimize missed attacks, Logistic Regression and Shallow MLP are safer choices in this experiment.
-In practice, the system would need targeted data collection, threshold tuning, or attack-family-specific training for Infiltration before it could be trusted as a broad IDS.
-For an operator, the best model depends on whether the priority is fewer alerts or fewer missed attacks in the most relevant attack family.
-The same observation also motivates a hybrid IDS design: rather than relying on one global decision rule for all malicious traffic, a system could use attack-family-aware thresholds or combine model signals according to the families each model handles best.
-
-The Autoencoder + MLP result is also informative.
-Autoencoders are common in deep IDS literature because they can learn compact representations of high-dimensional flow features.
-In this experiment, the autoencoder-based model behaves similarly to Deep MLP: high precision, relatively high F1, but low recall.
-This does not prove that autoencoders are ineffective for IDS.
-Rather, it shows that this specific latent representation, binary objective, and default threshold did not solve the false-negative problem.
-Thus, adding depth or representation learning does not automatically improve security coverage.
+If the goal is fewer alerts, Deep MLP or Autoencoder + MLP may look attractive because they are more precision-oriented; if the goal is fewer missed attacks, Logistic Regression and Shallow MLP are safer choices in this experiment.
+The same observation motivates future hybrid IDS designs that use attack-family-aware thresholds or combine model signals according to the families each model handles best.
+The Autoencoder + MLP result reinforces this caution: representation learning improved selectivity, but it did not solve the false-negative problem, so adding depth or latent features does not automatically improve security coverage.
 
 \section{Risks and Limitations}
 
@@ -425,21 +379,25 @@ The first limitation is dataset dependence.
 CSE-CIC-IDS2018 is a public benchmark dataset, and models may learn dataset-specific artifacts rather than general intrusion behavior.
 To reduce this risk, the study avoids accuracy-only reporting and focuses on false negatives by attack type.
 However, the results should still be interpreted as behavior on this sampled benchmark, not as a production IDS guarantee.
+A direct mitigation is to rerun the same pipeline on additional flow-level IDS datasets and test whether the same model rankings and blind spots persist.
 
 The second limitation is class imbalance.
 Some attack types have small test support, so perfect recall on those labels should not be overclaimed.
 For example, several rare attack categories have fewer than 30 test samples.
 The analysis therefore gives special attention to Infiltration because it is both frequent and poorly detected.
+It also reports per-label support so rare-label results can be interpreted as diagnostic signals rather than strong general claims.
 
 The third limitation is model tuning.
 The neural models were implemented as reproducible baselines rather than exhaustively tuned architectures.
 Different thresholds, loss functions, resampling strategies, or hyperparameters might improve recall.
 This is especially important because the default 0.5 decision threshold may not be optimal for security.
+The most relevant mitigation is to evaluate recall at fixed false-positive budgets or tune thresholds directly for missed-attack cost.
 
 The fourth limitation is the binary training objective.
 The models are trained to distinguish benign from malicious flows, and attack labels are used only after training for analysis.
 A multiclass or hierarchical model might learn attack-specific patterns more directly.
 The binary design was chosen because it matches a lightweight IDS prototype and keeps the comparison focused.
+Future variants should compare this binary design against attack-family-aware training to see whether supervision improves the uncovered labels.
 
 \section{Future Work}
 
@@ -466,7 +424,10 @@ If the same model rankings and blind spots appear across datasets, the conclusio
 
 \section{Conclusion}
 
-This paper evaluated the limits of aggregate metrics for flow-level intrusion detection and tested whether attack-type-specific analysis can complement them.
+\paragraph{Attack-type-specific evaluation.}
+The main finding is not that one model family is universally better.
+The main finding is that aggregate IDS metrics can select the wrong model for a security objective.
+This paper evaluated that limitation in flow-level intrusion detection and tested whether attack-type-specific analysis can complement aggregate reporting.
 In this CSE-CIC-IDS2018 experiment, aggregate metrics alone are not sufficient: neural models do not consistently reduce missed attacks even when some of them improve precision or F1-score.
 Deep MLP and Autoencoder + MLP improve precision and F1-score, but Logistic Regression has the highest attack recall and lowest false-negative rate.
 Shallow MLP is the most stable neural model by recall and performs close to Logistic Regression.
@@ -480,6 +441,7 @@ A model that wins by F1-score may still fail as a security tool if it misses the
 For IDS evaluation, the central question should not be only which model wins, but which attacks remain uncovered after the model wins.
 Attack-type-specific analysis also shows which model is useful for which part of the threat landscape, making it a practical basis for model selection rather than just an interpretive add-on.
 
+\paragraph{Flexible model choice.}
 This changes how the result should be used.
 The experiment does not support replacing traditional IDS baselines with deeper neural models simply because they produce better F1-scores.
 Instead, it supports a more cautious workflow: choose the model according to the attack families that matter operationally, inspect false negatives by label, and tune the decision threshold around the cost of missed attacks.
@@ -488,41 +450,35 @@ The broader implication is that IDS evaluation should move from model-level lead
 
 \clearpage
 
-\begin{thebibliography}{7}
+\begin{thebibliography}{6}
 
-\bibitem{sharafaldin2018}
-[1] I. Sharafaldin, A. H. Lashkari, and A. A. Ghorbani. 2018. Toward Generating
-a New Intrusion Detection Dataset and Intrusion Traffic Characterization. In
-Proceedings of the 4th International Conference on Information Systems Security
-and Privacy, 108--116. https://www.unb.ca/cic/datasets/ids-2017.html
+\bibitem{gamage2020}
+S. Gamage and J. Samarabandu. 2020. Deep Learning Methods in Network Intrusion Detection: A Survey and an Objective Comparison. Journal of Network and
+Computer Applications 169, 102767.
+
+\bibitem{saito2015}
+T. Saito and M. Rehmsmeier. 2015. The Precision-Recall Plot Is More Informative
+than the ROC Plot When Evaluating Binary Classifiers on Imbalanced Datasets.
+PLOS ONE 10, 3, e0118432. https://doi.org/10.1371/journal.pone.0118432
 
 \bibitem{cic2018}
-[2] Canadian Institute for Cybersecurity. 2018. CSE-CIC-IDS2018 on AWS: A Realistic
+Canadian Institute for Cybersecurity. 2018. CSE-CIC-IDS2018 on AWS: A Realistic
 Cyber Defense Dataset. University of New Brunswick. https://www.unb.ca/cic/
 datasets/ids-2018.html
 
 \bibitem{breiman2001}
-[3] L. Breiman. 2001. Random Forests. Machine Learning 45, 1, 5--32. https://doi.org/
+L. Breiman. 2001. Random Forests. Machine Learning 45, 1, 5--32. https://doi.org/
 10.1023/A:1010933404324
 
-\bibitem{gamage2020}
-[4] S. Gamage and J. Samarabandu. 2020. Deep Learning Methods in Network Intrusion Detection: A Survey and an Objective Comparison. Journal of Network and
-Computer Applications 169, 102767.
-
 \bibitem{rosay2020}
-[5] A. Rosay, F. Carlier, and P. Leroux. 2020. MLP4NIDS: An Efficient MLP-Based
+A. Rosay, F. Carlier, and P. Leroux. 2020. MLP4NIDS: An Efficient MLP-Based
 Network Intrusion Detection for CICIDS2017 Dataset. In Machine Learning for
 Networking (MLN 2019), Lecture Notes in Computer Science 12081, 240--254.
 https://doi.org/10.1007/978-3-030-45778-5\_16
 
 \bibitem{song2021}
-[6] Y. Song, S. Hyun, and Y.-G. Cheong. 2021. Analysis of Autoencoders for Network
+Y. Song, S. Hyun, and Y.-G. Cheong. 2021. Analysis of Autoencoders for Network
 Intrusion Detection. Sensors 21, 13, 4294. https://doi.org/10.3390/s21134294
-
-\bibitem{saito2015}
-[7] T. Saito and M. Rehmsmeier. 2015. The Precision-Recall Plot Is More Informative
-than the ROC Plot When Evaluating Binary Classifiers on Imbalanced Datasets.
-PLOS ONE 10, 3, e0118432. https://doi.org/10.1371/journal.pone.0118432
 
 \end{thebibliography}
 

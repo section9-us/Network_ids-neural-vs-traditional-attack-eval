@@ -9,7 +9,7 @@
 \usepackage{array}
 \usepackage{graphicx}
 
-\title{Flow-Level Intrusion Detection에서 Neural Model과 Traditional Model의 Attack-Type-Specific Evaluation}
+\title{Beyond Aggregate Metrics: Attack-Type-Specific Evaluation of Flow-Level IDS Models}
 
 \author{Yonghyeon Lee}
 \email{yhylee@ucdavis.edu}
@@ -27,6 +27,7 @@ CSE-CIC-IDS2018 processed flow-feature dataset을 사용해 Logistic Regression,
 Deep MLP와 Autoencoder + MLP는 precision과 F1-score를 개선했지만, Logistic Regression이 가장 높은 attack recall과 가장 낮은 false-negative rate를 보였다.
 Attack-type analysis는 DoS/DDoS와 많은 brute-force attack이 잘 탐지되고, Random Forest가 Bot과 SQL Injection에서 가장 강하며, Infiltration은 모든 모델의 shared blind spot으로 남는다는 점을 보여준다.
 이 결과는 attack-type-specific analysis가 단순한 해석 보조가 아니라 모델 선택, threshold 조정, 그리고 각 모델이 잘 cover하는 attack family를 중심으로 더 유연한 hybrid IDS를 설계하기 위한 핵심 평가 단계임을 시사한다.
+다시 말해 aggregate metric은 평균적으로 좋은 모델을 보여주지만, attack-type analysis는 그 모델이 특정 IDS 환경에서 중요한 attack family를 실제로 cover하는지 보여준다.
 따라서 IDS evaluation은 하나의 global winner를 고르는 방식에서 벗어나, aggregate metric과 attack-type-specific false-negative analysis를 함께 사용해 미래 IDS 설계가 더 다양한 coverage-oriented 선택지를 가질 수 있게 해야 한다.
 \end{abstract}
 
@@ -60,6 +61,8 @@ Flow-level data는 packet 하나하나의 내용을 직접 다루기보다, 여�
 이를 위해 본 연구는 neural model과 traditional model을 같은 pipeline에서 비교한다.
 그리고 DoS/DDoS, brute force, botnet, infiltration, web-based attack별로 각 모델이 어디서 잘 작동하고 어디서 실패하는지 살펴본다.
 이 attack-type result는 모델 선택, 오류 원인 분석, future hybrid IDS design을 위한 근거로도 사용될 수 있다.
+이 관점에서 attack-type-specific evaluation은 단순한 post-hoc explanation이 아니라 practical model selection으로 확장된다.
+Aggregate metric은 평균적으로 좋은 모델을 보여주지만, attack-type analysis는 그 모델이 특정 IDS 환경에서 중요한 attack family를 실제로 cover하는지 보여준다.
 
 초기 hypothesis는 aggregate metric만으로는 각 모델의 security coverage를 충분히 설명하지 못한다는 것이었다.
 나는 neural model이 일부 aggregate score를 개선하고, botnet이나 web-based traffic처럼 feature interaction이 중요한 attack에서 더 나은 성능을 보일 수 있다고 예상했다.
@@ -74,37 +77,21 @@ Empirical contribution은 같은 CSE-CIC-IDS2018 sample에서 Logistic Regressio
 
 \section{Related Work}
 
-Intrusion detection dataset에 대한 prior work는 이 프로젝트의 empirical setting을 뒷받침한다.
-CICIDS2017은 older IDS dataset보다 더 realistic한 benchmark를 제공하기 위해 소개되었다.
-이 dataset은 benign traffic과 common attack traffic을 labeled network-flow feature로 포함한다 [1].
-CSE-CIC-IDS2018은 이 방향을 확장해 brute force, Heartbleed, botnet, DoS, DDoS, web attack, infiltration을 포함하는 더 큰 cyber-defense dataset을 제공한다 [2].
-이 dataset들은 binary benign/malicious detection과 attack-category-specific analysis를 모두 지원하기 때문에 본 연구와 직접적으로 관련된다.
-특히 본 연구에서는 CSE-CIC-IDS2018을 binary IDS task로 학습하면서도 원래 attack label을 보존해 post-hoc attack-type analysis를 수행할 수 있다는 점이 중요하다.
+이 프로젝트는 IDS model performance를 해석하는 방식의 gap에서 출발한다.
+Gamage and Samarabandu는 IDS model comparison이 서로 다른 dataset과 evaluation metric 때문에 어렵다고 설명하며, benchmark에서 accuracy, F1-score, false-positive rate, false-negative rate 같은 model-level metric을 보고했다 [1].
+하지만 dataset이 imbalanced하거나 일부 attack category가 더 어려운 경우 aggregate score는 security-relevant failure를 숨길 수 있다.
+Saito and Rehmsmeier는 imbalanced classification problem에서 precision-recall analysis가 특히 informative하다는 점을 보였다 [2].
+IDS에서는 false negative가 system이 놓친 malicious flow를 의미하므로, 본 연구는 recall, false-negative rate, attack-type detection rate를 핵심 security metric으로 다룬다.
 
-IDS modeling에 대한 prior work는 본 연구의 model set에 동기를 부여한다.
-Logistic Regression은 simple linear baseline으로 사용되며, Random Forest는 many decision-tree predictor를 ensemble로 결합하기 때문에 standard traditional machine learning baseline으로 사용된다 [3].
-Deep learning도 network intrusion detection에서 활발히 연구되었다.
-Gamage and Samarabandu는 IDS를 위한 deep learning approach를 survey하고 feed-forward neural network, autoencoder, deep belief network, LSTM을 legacy 및 modern IDS dataset에서 비교했다 [4].
-더 구체적으로 Rosay, Carlier, Leroux는 CICIDS2017 dataset에서 MLP 기반 intrusion detection system을 제안했고, 잘 설계된 MLP가 traditional machine learning technique과 경쟁할 수 있음을 보였다 [5].
-Song, Hyun, Cheong은 network intrusion detection을 위한 autoencoder를 분석하면서 model capacity, latent size, thresholding 같은 설계 선택이 IDS performance에 큰 영향을 줄 수 있음을 보였다 [6].
-이는 MLP 기반 neural model과 autoencoder 기반 representation-learning model을 포함하는 본 연구의 비교 구성을 뒷받침한다.
-동시에 prior work는 neural architecture를 추가하는 것만으로는 새로운 contribution이 되기 어렵다는 점도 보여준다.
+CSE-CIC-IDS2018은 본 연구의 empirical setting을 제공한다.
+이 dataset은 brute force, Heartbleed, botnet, DoS, DDoS, web attack, infiltration을 포함하는 여러 attack scenario를 제공한다 [3].
+본 연구에서는 이 dataset을 binary benign/malicious task로 학습하면서도 원래 attack label을 보존해 post-hoc attack-category analysis를 수행할 수 있다는 점이 중요하다.
 
-이 프로젝트가 다루는 gap은 IDS model performance를 해석하는 방식에 있다.
-많은 IDS 연구는 overall accuracy나 aggregate detection performance를 강조하지만 [4], dataset이 imbalanced하거나 일부 attack category가 더 어려운 경우 aggregate metric은 security-relevant failure를 숨길 수 있다.
-Saito and Rehmsmeier는 imbalanced classification problem에서 precision-recall analysis가 ROC plot보다 더 informative하다는 점을 보였다 [7].
-이 점은 IDS에서 중요하다.
-False negative는 system이 malicious traffic을 flag하지 못했다는 의미이기 때문이다.
-따라서 본 연구는 recall, false-negative rate, attack-type detection rate를 부가적 진단 지표가 아니라 핵심 security metric으로 다룬다.
-
-따라서 이 프로젝트는 existing work 안에 위치하지만 더 좁고 security-centered question을 묻는다.
-나는 neural model이 traditional machine learning보다 단순히 IDS를 더 잘한다고 주장하지 않는다.
-대신 Logistic Regression, Random Forest, Shallow MLP, Lightweight PyTorch MLP, Deep MLP, Autoencoder + MLP를 같은 flow-level pipeline에서 비교해 각 모델이 어떤 attack category를 놓치는지 식별한다.
-따라서 neural 및 traditional baseline은 새로운 best IDS architecture를 주장하기 위한 것이 아니라, common model-comparison metric이 attack-specific failure mode를 가리는지 확인하기 위한 것이다.
-이 framing은 최종 실험 목표와도 맞다.
-Neural model은 precision이나 F1-score를 개선할 수 있지만, 더 중요한 security question은 DoS/DDoS, brute force, botnet, infiltration, web attack category 전반에서 missed attack을 실제로 줄이는지이다.
-Related work는 세 가지 방식으로 이 프로젝트를 지지한다.
-CICIDS dataset은 labeled flow-level setting을 제공하고, prior ML/DL IDS work는 model comparison을 정당화하며, imbalanced-evaluation research는 aggregate metric을 보완하기 위해 attack-type recall과 false-negative analysis를 사용해야 하는 이유를 제공한다.
+IDS modeling prior work는 본 연구의 model set을 정당화한다.
+Logistic Regression은 linear baseline으로 사용하고, Random Forest는 many decision-tree predictor를 ensemble로 결합하는 standard traditional machine learning baseline으로 사용한다 [4].
+Deep learning도 IDS에서 활발히 연구되었다: Gamage and Samarabandu는 feed-forward neural network, autoencoder, deep belief network, LSTM을 비교했고 [1], Rosay, Carlier, Leroux는 CICIDS2017에서 MLP 기반 IDS가 경쟁력 있음을 보였으며 [5], Song, Hyun, Cheong은 autoencoder의 capacity, latent size, thresholding이 IDS performance에 큰 영향을 줄 수 있음을 보였다 [6].
+이 prior work는 traditional model, MLP 기반 model, autoencoder 기반 model을 함께 비교할 이유를 제공하지만, neural architecture를 추가하는 것만으로는 충분한 contribution이 아니라는 점도 보여준다.
+따라서 본 논문은 이 baseline들을 사용해 common model-comparison metric이 threat landscape 전반의 attack-specific false-negative pattern을 가리는지 묻는다.
 
 \section{Method}
 
@@ -180,7 +167,7 @@ Recall은 전체 malicious test flow를 대상으로 계산하는 aggregate metr
 반면 attack-type detection rate는 특정 attack type 또는 attack family 안에서만 계산하는 group-specific recall이다.
 즉 새로운 종류의 metric이라기보다, recall을 attack label별로 나누어 본 값이다.
 
-\begin{table}[H]
+\begin{table}[t]
   \caption{Overall recall과 attack-type detection rate의 차이.}
   \label{tab:recall_definition}
   \centering
@@ -242,56 +229,15 @@ Pipeline은 먼저 CSE-CIC-IDS2018 flow-level data를 정리하고, rare attack 
 
 \subsection{Overall Model Performance}
 
-Table~\ref{tab:overall}은 10,000-row test split에서 binary malicious-class performance를 보여준다.
-이 표는 본 연구의 central tension을 보여준다.
+10,000-row test split의 binary malicious-class performance는 본 연구의 central tension을 보여준다.
 Aggregate F1-score는 Deep MLP를 지지하지만, security-focused false-negative metric은 Logistic Regression을 지지한다.
-Deep MLP는 가장 높은 F1-score와 precision을 달성했다.
-하지만 Logistic Regression은 가장 높은 recall과 가장 낮은 false-negative rate를 보였다.
+Deep MLP는 가장 높은 precision과 F1-score(precision 0.747, F1 0.574)를 보인 반면, Logistic Regression은 가장 높은 recall과 가장 낮은 false-negative rate(recall 0.528, FNR 0.472)를 보였다.
 이 차이는 실험의 security interpretation에서 핵심적이다.
 F1-score 기준으로 가장 좋아 보이는 모델이 공격을 가장 적게 놓치는 모델은 아니었다.
-
-\begin{table}[H]
-  \caption{Test split에서의 malicious-class overall performance.}
-  \label{tab:overall}
-  \centering
-  \small
-  \begin{tabular}{lrrrr}
-    \toprule
-    Model & Precision & Recall & F1 & FNR \\
-    \midrule
-    Logistic Regression & 0.512 & 0.528 & 0.520 & 0.472 \\
-    Random Forest & 0.649 & 0.471 & 0.546 & 0.529 \\
-    Shallow MLP & 0.578 & 0.524 & 0.550 & 0.476 \\
-    PyTorch MLP & 0.615 & 0.507 & 0.556 & 0.493 \\
-    Deep MLP & 0.747 & 0.467 & 0.574 & 0.533 \\
-    Autoencoder + MLP & 0.723 & 0.471 & 0.570 & 0.529 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\paragraph{Logistic Regression.}
-Logistic Regression은 가장 높은 recall(0.528)과 가장 낮은 false-negative rate(0.472)를 보였고, 1,197개 attack을 놓쳤다.
-Precision은 가장 낮았지만, missed malicious flow를 최소화하는 것이 우선이라면 이번 실험에서 가장 안전한 모델이다.
-
-\paragraph{Random Forest.}
-Random Forest는 precision을 0.649까지 높였지만 recall은 0.471로 낮아졌고 1,342개 attack을 놓쳤다.
-Binary level에서는 Logistic Regression보다 더 selective했지만, 뒤의 attack-type result에서는 Botnet과 Web Attack에서 강점을 보인다.
-
-\paragraph{Shallow MLP.}
-Shallow MLP는 neural model 중 recall이 가장 높았고, 0.524 recall과 1,209개 missed attack을 기록했다.
-Logistic Regression과 비슷한 recall profile을 보이면서 precision과 F1-score는 더 높아 가장 균형 잡힌 neural baseline이었다.
-
-\paragraph{Lightweight PyTorch MLP.}
-Two-hidden-layer PyTorch MLP는 Logistic Regression보다 precision과 F1-score를 높였지만, recall은 0.507로 낮아졌고 false negative는 1,252개로 증가했다.
-따라서 missed attack을 명확히 줄이기보다는 moderate precision-recall tradeoff를 제공한다.
-
-\paragraph{Deep MLP.}
-Deep MLP는 가장 높은 precision(0.747)과 F1-score(0.574)를 보였지만, false-negative rate도 0.533으로 가장 높았고 1,354개 attack을 놓쳤다.
-즉 malicious로 예측할 때는 더 정확하지만, 더 많은 실제 attack을 탐지하지 못한 가장 selective한 모델이다.
-
-\paragraph{Autoencoder + MLP.}
-Autoencoder + MLP는 Deep MLP와 유사하게 높은 precision(0.723), 높은 F1-score(0.570), 높은 false-negative rate(0.529)를 보였다.
-Learned representation은 selectivity를 높였지만 IDS recall problem을 해결하지는 못했다.
+모델별로 보면 Logistic Regression은 가장 적은 attack을 놓쳤고(1,197개), Shallow MLP는 neural model 중 가장 높은 recall을 보였다(recall 0.524, missed attack 1,209개).
+PyTorch MLP는 중간 정도의 precision-recall tradeoff를 보였지만, Deep MLP와 Autoencoder + MLP는 더 selective했다.
+두 모델은 precision과 F1-score를 높였지만 false negative는 각각 1,354개와 1,342개로 증가했다.
+따라서 neural model은 일부 aggregate score를 개선했지만, security coverage를 일관되게 개선하지는 못했다.
 
 \begin{figure}[t]
   \centering
@@ -300,6 +246,14 @@ Learned representation은 selectivity를 높였지만 IDS recall problem을 해�
   \Description{여섯 개 평가 모델의 false-negative rate와 false-negative count를 비교하는 zoomed bar chart.}
   \label{fig:fnr}
 \end{figure}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{reports/final_run/attack_type_detection.pdf}
+  \caption{Fine-grained attack type별 model recall.}
+  \Description{각 모델의 fine-grained attack-type recall을 보여주는 grouped bar chart.}
+  \label{fig:types}
+\end{figure*}
 
 \subsection{Coarse Attack-Family Results}
 
@@ -317,7 +271,7 @@ Family-level recall은 0.299에 불과했다.
 Random Forest는 334개, Shallow MLP는 469개, PyTorch MLP는 428개, Deep MLP는 359개, Autoencoder + MLP는 367개를 탐지했다.
 이 family는 전체 false negative의 큰 부분을 차지한다.
 
-\begin{table}[H]
+\begin{table}[t]
   \caption{Coarse attack-family recall 기준 best model.}
   \label{tab:families}
   \centering
@@ -335,14 +289,6 @@ Random Forest는 334개, Shallow MLP는 469개, PyTorch MLP는 428개, Deep MLP�
   \end{tabular}
 \end{table}
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\linewidth]{reports/final_run/attack_family_detection.pdf}
-  \caption{Coarse attack family와 model별 detection recall.}
-  \Description{각 모델의 coarse attack family별 recall을 보여주는 grouped bar chart.}
-  \label{fig:family}
-\end{figure}
-
 \subsection{Fine-Grained Attack-Type Results}
 
 이 subsection은 본 논문의 핵심 결과를 가장 직접적으로 보여준다.
@@ -350,6 +296,8 @@ Random Forest는 334개, Shallow MLP는 469개, PyTorch MLP는 428개, Deep MLP�
 따라서 이 분석은 단순히 추가적인 세부 결과가 아니라, aggregate IDS metric이 숨길 수 있는 security-relevant blind spot을 확인하는 중심 evidence이다.
 Fine-grained result는 family-level pattern을 만드는 구체적인 attack을 설명한다.
 또한 aggregate model score가 하나의 숫자로 압축해버리는 구체적인 failure mode를 보여준다.
+여기서 attack-type-specific evaluation은 post-hoc explanation을 넘어 practical model selection의 근거가 된다.
+이 분석은 어떤 모델이 전체적으로 좋아 보이는지만이 아니라, 각 모델이 어떤 attack label을 실제로 cover하는지 보여주기 때문이다.
 몇몇 attack label은 거의 모든 모델이 완벽하게 탐지했다.
 DDOS attack-HOIC, DDOS attack-LOIC-UDP, DoS attacks-SlowHTTPTest, FTP-BruteForce, SSH-Bruteforce는 대부분 모델에서 near-perfect 또는 perfect recall을 보였다.
 이 attack들은 benign traffic과 구분되는 flow-feature signature가 비교적 뚜렷한 것으로 보인다.
@@ -420,76 +368,36 @@ Test set에서 가장 큰 attack label이며 1,669개 sample을 포함한다.
 Logistic Regression이 0.299 recall로 가장 좋았고, Shallow MLP는 0.281, PyTorch MLP는 0.256, Autoencoder + MLP는 0.220, Deep MLP는 0.215, Random Forest는 0.200이었다.
 이것이 실험에서 가장 명확한 security blind spot이다.
 
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=\textwidth]{reports/final_run/attack_type_detection.pdf}
-  \caption{Fine-grained attack type별 model recall.}
-  \Description{각 모델의 fine-grained attack-type recall을 보여주는 grouped bar chart.}
-  \label{fig:types}
-\end{figure*}
-
 \section{Discussion}
 
-이 논문이 말하고자 하는 핵심 메시지는 IDS model evaluation이 aggregate score에서 멈추면 안 된다는 것이다.
-Precision, recall, F1-score는 모델을 빠르게 비교하는 데 유용하지만, 어떤 attack type이 여전히 uncovered로 남는지는 충분히 보여주지 못한다.
-이번 실험에서 neural model은 일부 aggregate metric을 개선했지만, 그것이 곧 더 넓은 security coverage를 의미하지는 않았다.
+종합하면, 이 결과는 attack-type-specific evaluation의 역할을 단순한 post-hoc explanation에서 practical model selection으로 확장한다.
+Precision, recall, F1-score 같은 aggregate metric은 평균적으로 좋은 모델을 빠르게 비교하는 데 유용하지만, 그 모델이 특정 IDS 환경에서 중요한 attack family를 실제로 cover하는지는 보여주지 못한다.
+이번 실험에서도 neural model은 일부 aggregate metric을 개선했지만, 그것이 곧 더 넓은 security coverage를 의미하지는 않았다.
 따라서 IDS evaluation의 핵심은 “어떤 모델이 전체 점수에서 이겼는가”가 아니라, “그 모델이 이긴 뒤에도 어떤 attack을 놓치는가”여야 한다.
 Attack-type-specific analysis는 이 질문에 답하기 위한 필수적인 평가 단계이며, future IDS model selection과 hybrid design을 더 유연하게 만드는 근거가 된다.
 
 \paragraph{Metric choice.}
-이 결과의 핵심은 단순하다.
-모델을 바꾸면 IDS의 전체 점수만 바뀌는 것이 아니라, 어떤 attack을 놓치는지도 함께 바뀐다.
-Shallow MLP와 PyTorch MLP는 Brute Force family에서 Random Forest와 비슷했고, MLP 계열 모델은 DoS/DDoS traffic에서도 좋은 성능을 보였다.
-하지만 neural model이 모든 attack type에서 missed attack을 줄인 것은 아니었다.
-오히려 전체 recall이 가장 높았던 모델은 Logistic Regression이었고, deeper neural model들은 더 많은 attack을 놓쳤다.
-
-이 점이 중요한 이유는 평가 기준에 따라 결론이 달라지기 때문이다.
+이 결과의 핵심은 평가 기준에 따라 결론이 달라진다는 점이다.
 F1-score나 precision만 보면 Deep MLP가 가장 좋은 모델처럼 보인다.
-Deep MLP는 malicious라고 예측한 경우에는 비교적 정확했다.
 하지만 IDS에서는 “탐지한 alert가 얼마나 정확한가”만큼 “공격을 얼마나 놓치지 않는가”도 중요하다.
 이 기준으로 보면 Logistic Regression과 Shallow MLP가 더 안전한 선택으로 보인다.
-따라서 best model은 하나의 숫자로 정해지지 않는다.
-어떤 보안 목표를 우선하느냐에 따라 좋은 모델이 달라진다.
+따라서 neural model은 일부 attack family와 aggregate score를 개선했지만, missed attack을 일관되게 줄이지는 못했다.
 
 \paragraph{Attack-type blind spots.}
-Attack-type result는 왜 aggregate metric만으로 부족한지를 보여준다.
-쉬운 attack에서 성능이 높으면 전체 점수는 좋아질 수 있다.
-하지만 그와 동시에 stealthy하거나 ambiguous한 attack은 계속 놓칠 수 있다.
-이번 결과에서도 DoS/DDoS와 FTP/SSH brute-force traffic은 대부분 잘 탐지되었다.
-반면 Bot과 SQL Injection에서는 Random Forest가 특히 강했고, Infiltration은 모든 모델이 공통적으로 약했다.
-특히 Infiltration은 test set에서 크기도 컸고, 전체 false negative의 대부분을 차지했다.
-여섯 모델에서 Infiltration은 전체 false negative의 96.8\%에서 99.5\%를 차지했다.
-따라서 aggregate score가 좋아 보여도 실제로는 가장 중요한 missed attack이 한 attack family에 집중될 수 있다.
-
-\paragraph{Diagnostic value.}
-이 분석은 attack-type-specific evaluation이 단순한 보조 설명이 아니라 diagnostic tool임을 보여준다.
-모델별로 잘 잡는 attack이 다르면, 각 모델이 어떤 traffic pattern에 강한지 알 수 있다.
-예를 들어 Random Forest가 Bot과 SQL Injection에서 강했다는 것은 일부 botnet 및 web attack behavior가 tabular flow feature의 threshold-style pattern으로 잘 포착될 수 있음을 시사한다.
-반대로 모든 모델이 Infiltration에서 약했다는 것은 단일 모델의 문제가 아니라, 현재 feature, dataset, 또는 binary training objective 자체가 이 attack family를 충분히 설명하지 못했을 가능성을 보여준다.
+Attack-type result는 이 mismatch가 생기는 이유를 보여준다.
+DoS/DDoS와 FTP/SSH brute-force traffic은 대부분 잘 탐지되었고, Bot과 SQL Injection에서는 Random Forest가 특히 강했다.
+반면 Infiltration은 frequent하면서도 어려운 shared blind spot이었다.
+모든 모델이 Infiltration sample의 대부분을 놓쳤고, 여섯 모델에서 Infiltration은 전체 false negative의 96.8\%에서 99.5\%를 차지했다.
+따라서 attack-type-specific evaluation은 단순한 보조 설명이 아니라 diagnostic tool이다.
+모델별 강점은 어떤 traffic pattern을 잘 탐지하는지 보여주고, 공통 실패는 feature, dataset, 또는 binary objective의 한계를 시사한다.
 
 \paragraph{Operational choice.}
-운영 관점에서도 함의가 있다.
-IDS를 배치할 때 단순히 average score가 가장 높은 모델을 고르는 것은 충분하지 않다.
-False alarm을 줄이는 것이 가장 중요하다면 precision이 높은 Deep MLP나 Autoencoder + MLP가 매력적일 수 있다.
-하지만 missed attack을 줄이는 것이 더 중요하다면 Logistic Regression이나 Shallow MLP가 더 나은 선택일 수 있다.
-또한 Infiltration처럼 모든 모델이 공통적으로 놓치는 attack family가 있다면, 모델을 하나 더 추가하는 것보다 그 attack에 대한 data collection, threshold tuning, 또는 attack-family-specific training이 먼저 필요하다.
-결국 운영 환경의 best model은 평균 점수가 아니라, 어떤 attack을 반드시 잡아야 하는지에 따라 선택되어야 한다.
-
-\paragraph{Hybrid IDS design.}
-이 결과는 future hybrid IDS 설계에도 연결된다.
-모든 malicious traffic에 하나의 global decision rule을 적용하기보다, attack family별로 threshold를 다르게 두거나 여러 모델의 signal을 조합할 수 있다.
-예를 들어 botnet이나 web attack에서는 Random Forest의 signal을 더 중요하게 보고, DoS/DDoS나 brute-force traffic에서는 MLP 계열 모델의 signal을 활용할 수 있다.
-이런 방식은 “하나의 winner model”을 찾는 접근보다 더 유연하다.
-각 모델이 잘 cover하는 attack type을 조합해 전체 IDS coverage를 넓히는 방향이기 때문이다.
-
-\paragraph{Autoencoder caution.}
-Autoencoder + MLP 결과도 조심스럽게 해석해야 한다.
-Autoencoder는 high-dimensional flow feature를 compact representation으로 바꿀 수 있기 때문에 IDS 연구에서 자주 사용된다.
-하지만 이번 실험에서는 Autoencoder + MLP가 Deep MLP와 비슷하게 동작했다.
-Precision과 F1-score는 높았지만 recall은 낮았다.
-이것은 autoencoder가 IDS에 쓸모없다는 뜻은 아니다.
-다만 이번 설정에서는 representation learning을 추가해도 false-negative problem이 자동으로 해결되지는 않았다는 뜻이다.
-따라서 더 깊은 모델이나 더 복잡한 representation을 사용하는 것만으로 security coverage가 좋아진다고 가정해서는 안 된다.
+운영 관점에서 best model은 평균 점수가 아니라 어떤 attack을 반드시 잡아야 하는지에 따라 선택되어야 한다.
+False alarm을 줄이는 것이 중요하다면 Deep MLP나 Autoencoder + MLP가 매력적일 수 있지만, missed attack을 줄이는 것이 더 중요하다면 Logistic Regression이나 Shallow MLP가 더 나은 선택일 수 있다.
+같은 논리는 future hybrid IDS 설계에도 연결된다.
+모든 malicious traffic에 하나의 global decision rule을 적용하기보다, attack family별 threshold를 다르게 두거나 여러 모델의 signal을 조합할 수 있다.
+Autoencoder + MLP 결과도 이 점을 강화한다.
+Representation learning은 selectivity를 높였지만 false-negative problem을 해결하지 못했으므로, 더 깊거나 복잡한 모델이 자동으로 security coverage를 높인다고 가정해서는 안 된다.
 
 \section{Risks and Limitations}
 
@@ -561,46 +469,40 @@ Attack-type-specific result를 보면 하나의 모델이 모든 attack type에�
 즉 attack-type-specific evaluation은 하나의 global winner를 고르는 대신, threat priority에 따라 model choice를 조정할 수 있게 한다. 또한 이 분석은 여러 모델을 조합하는 근거도 제공한다.
 각 모델이 서로 다른 attack type에 강하다면, future IDS는 하나의 모델에만 의존하지 않고 model signal을 조합하거나 attack-family별 threshold를 다르게 설정할 수 있다.
 이런 접근은 aggregate score만 보고 모델을 선택하는 방식보다 더 현실적인 security coverage를 제공할 수 있다.
-결국 이 논문의 메시지는 하나다.
-IDS evaluation은 model-level leaderboard에서 멈추지 말고, attack-type-level coverage를 반드시 함께 평가해야 한다.
+따라서 이 논문의 핵심 함의는 IDS evaluation이 model-level leaderboard에만 머물러서는 충분하지 않다는 점이다.
+Aggregate score와 함께 attack-type-level coverage를 평가할 때, 모델의 실제 security coverage를 더 현실적으로 이해할 수 있다.
 
 \clearpage
 
-\begin{thebibliography}{7}
+\begin{thebibliography}{6}
 
-\bibitem{sharafaldin2018}
-[1] I. Sharafaldin, A. H. Lashkari, and A. A. Ghorbani. 2018. Toward Generating
-a New Intrusion Detection Dataset and Intrusion Traffic Characterization. In
-Proceedings of the 4th International Conference on Information Systems Security
-and Privacy, 108--116. https://www.unb.ca/cic/datasets/ids-2017.html
+\bibitem{gamage2020}
+S. Gamage and J. Samarabandu. 2020. Deep Learning Methods in Network Intrusion Detection: A Survey and an Objective Comparison. Journal of Network and
+Computer Applications 169, 102767.
+
+\bibitem{saito2015}
+T. Saito and M. Rehmsmeier. 2015. The Precision-Recall Plot Is More Informative
+than the ROC Plot When Evaluating Binary Classifiers on Imbalanced Datasets.
+PLOS ONE 10, 3, e0118432. https://doi.org/10.1371/journal.pone.0118432
 
 \bibitem{cic2018}
-[2] Canadian Institute for Cybersecurity. 2018. CSE-CIC-IDS2018 on AWS: A Realistic
+Canadian Institute for Cybersecurity. 2018. CSE-CIC-IDS2018 on AWS: A Realistic
 Cyber Defense Dataset. University of New Brunswick. https://www.unb.ca/cic/
 datasets/ids-2018.html
 
 \bibitem{breiman2001}
-[3] L. Breiman. 2001. Random Forests. Machine Learning 45, 1, 5--32. https://doi.org/
+L. Breiman. 2001. Random Forests. Machine Learning 45, 1, 5--32. https://doi.org/
 10.1023/A:1010933404324
 
-\bibitem{gamage2020}
-[4] S. Gamage and J. Samarabandu. 2020. Deep Learning Methods in Network Intrusion Detection: A Survey and an Objective Comparison. Journal of Network and
-Computer Applications 169, 102767.
-
 \bibitem{rosay2020}
-[5] A. Rosay, F. Carlier, and P. Leroux. 2020. MLP4NIDS: An Efficient MLP-Based
+A. Rosay, F. Carlier, and P. Leroux. 2020. MLP4NIDS: An Efficient MLP-Based
 Network Intrusion Detection for CICIDS2017 Dataset. In Machine Learning for
 Networking (MLN 2019), Lecture Notes in Computer Science 12081, 240--254.
 https://doi.org/10.1007/978-3-030-45778-5\_16
 
 \bibitem{song2021}
-[6] Y. Song, S. Hyun, and Y.-G. Cheong. 2021. Analysis of Autoencoders for Network
+Y. Song, S. Hyun, and Y.-G. Cheong. 2021. Analysis of Autoencoders for Network
 Intrusion Detection. Sensors 21, 13, 4294. https://doi.org/10.3390/s21134294
-
-\bibitem{saito2015}
-[7] T. Saito and M. Rehmsmeier. 2015. The Precision-Recall Plot Is More Informative
-than the ROC Plot When Evaluating Binary Classifiers on Imbalanced Datasets.
-PLOS ONE 10, 3, e0118432. https://doi.org/10.1371/journal.pone.0118432
 
 \end{thebibliography}
 
