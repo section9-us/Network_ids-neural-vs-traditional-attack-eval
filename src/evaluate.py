@@ -7,7 +7,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
     classification_report,
@@ -15,6 +14,23 @@ from sklearn.metrics import (
     precision_recall_fscore_support,
 )
 
+
+MODEL_COLORS = {
+    "Logistic Regression": "#6A51A3",
+    "Random Forest": "#2CA25F",
+    "Shallow MLP": "#FDD049",
+    "PyTorch MLP": "#2B8CBE",
+    "Deep MLP": "#F03B20",
+    "Autoencoder + MLP": "#BDBDBD",
+}
+MODEL_HATCHES = {
+    "Logistic Regression": "",
+    "Random Forest": "////",
+    "Shallow MLP": "\\\\\\\\",
+    "PyTorch MLP": "xxxx",
+    "Deep MLP": "",
+    "Autoencoder + MLP": "....",
+}
 
 ATTACK_FAMILY_MAP = {
     "DDOS attack-HOIC": "DoS/DDoS",
@@ -36,6 +52,112 @@ ATTACK_FAMILY_MAP = {
     "Botnet": "Botnet",
     "Web Attack": "Web Attack",
 }
+
+
+def apply_publication_style() -> None:
+    plt.rcParams.update(
+        {
+            "figure.dpi": 140,
+            "savefig.dpi": 300,
+            "font.family": "serif",
+            "font.serif": ["Times New Roman", "DejaVu Serif", "Times"],
+            "font.size": 9,
+            "axes.titlesize": 10,
+            "axes.labelsize": 9,
+            "axes.edgecolor": "#222222",
+            "axes.linewidth": 0.85,
+            "xtick.labelsize": 8,
+            "ytick.labelsize": 8,
+            "legend.fontsize": 7,
+            "legend.frameon": False,
+            "grid.color": "#D9D9D9",
+            "grid.linewidth": 0.65,
+            "grid.linestyle": "--",
+            "hatch.linewidth": 0.7,
+        }
+    )
+
+
+def save_figure(fig: plt.Figure, output_path: Path) -> None:
+    fig.tight_layout()
+    fig.savefig(output_path, bbox_inches="tight")
+    fig.savefig(output_path.with_suffix(".pdf"), bbox_inches="tight")
+    plt.close(fig)
+
+
+def tidy_axis(ax: plt.Axes) -> None:
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.grid(axis="y")
+    ax.set_axisbelow(True)
+
+
+def model_order(frame: pd.DataFrame) -> list[str]:
+    known = [model for model in MODEL_COLORS if model in set(frame["model"])]
+    rest = sorted(set(frame["model"]) - set(known))
+    return known + rest
+
+
+def plot_grouped_bar(
+    frame: pd.DataFrame,
+    *,
+    category_col: str,
+    value_col: str,
+    ylabel: str,
+    xlabel: str,
+    title: str,
+    output_path: Path,
+    xrotation: int,
+) -> None:
+    apply_publication_style()
+    categories = sorted(frame[category_col].astype(str).unique())
+    models = model_order(frame)
+    pivot = (
+        frame.assign(**{category_col: frame[category_col].astype(str)})
+        .pivot_table(index=category_col, columns="model", values=value_col, aggfunc="mean")
+        .reindex(index=categories, columns=models)
+        .fillna(0.0)
+    )
+
+    width = min(0.12, 0.78 / max(len(models), 1))
+    x_positions = range(len(categories))
+    fig_width = max(8.4, 0.58 * len(categories) + 3.0)
+    fig, ax = plt.subplots(figsize=(fig_width, 4.9))
+
+    for model_index, model in enumerate(models):
+        offsets = [
+            x + (model_index - (len(models) - 1) / 2) * width
+            for x in x_positions
+        ]
+        bars = ax.bar(
+            offsets,
+            pivot[model].to_numpy(),
+            width=width,
+            label=model,
+            color=MODEL_COLORS.get(model, "#8C8C8C"),
+            edgecolor="#222222",
+            linewidth=0.55,
+            hatch=MODEL_HATCHES.get(model, ""),
+        )
+        for bar in bars:
+            bar.set_alpha(0.96)
+
+    ax.set_ylim(0, 1.05)
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    ax.set_title(title, pad=8)
+    ax.set_xticks(list(x_positions))
+    ax.set_xticklabels(categories, rotation=xrotation, ha="right" if xrotation else "center")
+    ax.legend(
+        ncol=min(len(models), 3),
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.20),
+        handlelength=1.3,
+        columnspacing=1.0,
+        handletextpad=0.4,
+    )
+    tidy_axis(ax)
+    save_figure(fig, output_path)
 
 
 def attack_family_for_label(label: str) -> str:
@@ -125,72 +247,87 @@ def attack_family_detection(model_name: str, attack_labels: pd.Series, y_true, y
 
 def save_confusion_matrix(model_name: str, y_true, y_pred, output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
+    apply_publication_style()
     cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
     display = ConfusionMatrixDisplay(cm, display_labels=["Benign", "Attack"])
     display.plot(cmap="Blues", values_format="d")
     plt.title(f"{model_name} Confusion Matrix")
-    plt.tight_layout()
     safe_name = model_name.lower().replace(" ", "_")
-    plt.savefig(output_dir / f"confusion_matrix_{safe_name}.png", dpi=160)
-    plt.close()
+    save_figure(plt.gcf(), output_dir / f"confusion_matrix_{safe_name}.png")
 
 
 def save_attack_type_plot(attack_results: pd.DataFrame, output_dir: Path) -> None:
     if attack_results.empty:
         return
     output_dir.mkdir(parents=True, exist_ok=True)
-    plt.figure(figsize=(10, 5))
-    sns.barplot(
-        data=attack_results,
-        x="attack_label",
-        y="detection_rate_recall",
-        hue="model",
+    plot_grouped_bar(
+        attack_results,
+        category_col="attack_label",
+        value_col="detection_rate_recall",
+        ylabel="Detection rate / recall",
+        xlabel="Attack type",
+        title="Attack-type-specific Detection Rate",
+        output_path=output_dir / "attack_type_detection.png",
+        xrotation=28,
     )
-    plt.ylim(0, 1.05)
-    plt.ylabel("Detection rate / recall")
-    plt.xlabel("Attack type")
-    plt.title("Attack-type-specific Detection Rate")
-    plt.xticks(rotation=25, ha="right")
-    plt.tight_layout()
-    plt.savefig(output_dir / "attack_type_detection.png", dpi=160)
-    plt.close()
 
 
 def save_attack_family_plot(attack_family_results: pd.DataFrame, output_dir: Path) -> None:
     if attack_family_results.empty:
         return
     output_dir.mkdir(parents=True, exist_ok=True)
-    plt.figure(figsize=(10, 5))
-    sns.barplot(
-        data=attack_family_results,
-        x="attack_family",
-        y="detection_rate_recall",
-        hue="model",
+    plot_grouped_bar(
+        attack_family_results,
+        category_col="attack_family",
+        value_col="detection_rate_recall",
+        ylabel="Detection rate / recall",
+        xlabel="Attack family",
+        title="Attack-family Detection Rate",
+        output_path=output_dir / "attack_family_detection.png",
+        xrotation=15,
     )
-    plt.ylim(0, 1.05)
-    plt.ylabel("Detection rate / recall")
-    plt.xlabel("Attack family")
-    plt.title("Attack-family Detection Rate")
-    plt.xticks(rotation=20, ha="right")
-    plt.tight_layout()
-    plt.savefig(output_dir / "attack_family_detection.png", dpi=160)
-    plt.close()
 
 
 def save_false_negative_plot(metrics: pd.DataFrame, output_dir: Path) -> None:
     if metrics.empty:
         return
     output_dir.mkdir(parents=True, exist_ok=True)
-    plt.figure(figsize=(8, 4))
-    sns.barplot(data=metrics, x="model", y="false_negative_rate")
-    plt.ylim(0, 1.05)
-    plt.ylabel("False negative rate")
-    plt.xlabel("Model")
-    plt.title("False Negative Rate by Model")
-    plt.xticks(rotation=15, ha="right")
-    plt.tight_layout()
-    plt.savefig(output_dir / "false_negative_rate.png", dpi=160)
-    plt.close()
+    apply_publication_style()
+
+    plot_data = metrics.sort_values("false_negative_rate", ascending=True).copy()
+    min_fnr = float(plot_data["false_negative_rate"].min())
+    max_fnr = float(plot_data["false_negative_rate"].max())
+    lower = max(0.0, min_fnr - 0.015)
+    upper = min(1.0, max_fnr + 0.015)
+
+    fig, ax = plt.subplots(figsize=(8.2, 4.4))
+    for index, (_, row) in enumerate(plot_data.iterrows()):
+        model = row["model"]
+        ax.bar(
+            index,
+            row["false_negative_rate"],
+            width=0.58,
+            color=MODEL_COLORS.get(model, "#8C8C8C"),
+            edgecolor="#222222",
+            linewidth=0.65,
+            hatch=MODEL_HATCHES.get(model, ""),
+        )
+        ax.text(
+            index,
+            row["false_negative_rate"] + 0.002,
+            f"FNR={row['false_negative_rate']:.3f}\nFN={int(row['false_negative'])}",
+            ha="center",
+            va="bottom",
+            fontsize=8,
+        )
+    ax.set_ylim(lower, upper)
+    ax.set_ylabel("False negative rate")
+    ax.set_xlabel("Model")
+    ax.set_title("False Negative Rate by Model (Zoomed Scale)", pad=8)
+    ax.set_xticks(range(len(plot_data)))
+    ax.set_xticklabels(plot_data["model"], rotation=18, ha="right")
+    tidy_axis(ax)
+    save_figure(fig, output_dir / "false_negative_rate.png")
 
 
 def save_model_comparison_findings(attack_results: pd.DataFrame, output_dir: Path) -> None:
